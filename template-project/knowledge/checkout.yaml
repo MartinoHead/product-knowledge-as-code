@@ -1,0 +1,11 @@
+feature: Checkout
+intent: Enable users to complete purchases with clear validation and payment confirmation.
+rules:
+  - id: CHK-001
+    title: Checkout requires at least one cart item.
+  - id: CHK-002
+    title: Shipping address fields are mandatory.
+  - id: CHK-003
+    title: Payment authorization is required before order creation.
+  - id: CHK-004
+    title: Confirmation page includes order reference.

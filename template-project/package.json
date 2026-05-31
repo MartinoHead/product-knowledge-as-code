@@ -1,0 +1,15 @@
+{
+  "name": "bda-template-project",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Starter template for Product Knowledge as Code architecture",
+  "scripts": {
+    "verify:sync": "node scripts/verify-sync.js",
+    "generate:tests": "npm run verify:sync && node scripts/generate-tests.js",
+    "verify:coverage": "node scripts/rule-coverage.js",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.1"
+  }
+}

@@ -1,0 +1,41 @@
+name: bda-quality
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: template-project
+        run: npm install
+
+      - name: Verify knowledge sync (md/yaml/gherkin)
+        working-directory: template-project
+        run: npm run verify:sync
+
+      - name: Generate tests from knowledge
+        working-directory: template-project
+        run: npm run generate:tests
+
+      - name: Verify rule coverage
+        working-directory: template-project
+        run: npm run verify:coverage
+
+      - name: Install Playwright browsers
+        working-directory: template-project
+        run: npx playwright install --with-deps
+
+      - name: Execute Playwright tests
+        working-directory: template-project
+        run: npm test

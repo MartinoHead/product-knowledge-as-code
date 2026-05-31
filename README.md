@@ -1,5 +1,3 @@
-# Behaviour-driven-architecture
-
 # Product Knowledge as Code
 
 ## Overview
@@ -72,6 +70,8 @@ The source of truth is product behavior.
 
 Behavior definitions live inside the repository and evolve together with the codebase.
 
+Knowledge can be authored in Markdown, YAML, and Gherkin. The three formats are validated for synchronization in CI so teams can work in the representation that best fits their workflow.
+
 ```text
 Behavior Knowledge
     ↓
@@ -96,7 +96,11 @@ repository/
 │
 ├── knowledge/
 │   ├── registration.md
+│   ├── registration.yaml
+│   ├── registration.feature
 │   ├── checkout.md
+│   ├── checkout.yaml
+│   ├── checkout.feature
 │   ├── users.md
 │
 └── .github/
@@ -186,6 +190,8 @@ Register with existing email
 Verify error message
 ```
 
+Before generation, synchronization checks verify that rule IDs and rule meanings are aligned across `.md`, `.yaml`, and `.feature` files.
+
 ---
 
 # Production Feedback Loop
@@ -271,3 +277,57 @@ Feedback
         ↓
 Knowledge Evolution
 ```
+
+---
+
+# Starter Template
+
+This repository includes a starter implementation in `template-project/` to bootstrap Product Knowledge as Code quickly.
+
+## What is included
+
+* Seed behavior knowledge files in `knowledge/` as `.md`, `.yaml`, and `.feature`
+* Playwright test location in `tests/playwright/`
+* Rule parser, sync validator, coverage check, and test generation scripts in `scripts/`
+* CI workflow in `.github/workflows/quality.yml`
+
+## Quick start
+
+1. Install dependencies:
+
+```bash
+cd template-project
+npm install
+```
+
+2. Verify knowledge sync across formats:
+
+```bash
+npm run verify:sync
+```
+
+3. Generate tests from synchronized knowledge:
+
+```bash
+npm run generate:tests
+```
+
+4. Verify rule coverage and run tests:
+
+```bash
+npm run verify:coverage
+npm test
+```
+
+## Knowledge sync contract
+
+Each feature must exist in all three formats with the same base name:
+
+* `knowledge/<feature>.md`
+* `knowledge/<feature>.yaml`
+* `knowledge/<feature>.feature`
+
+Sync validation enforces:
+
+* Matching rule IDs across all three formats
+* Matching rule intent text across all three formats

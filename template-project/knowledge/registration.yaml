@@ -1,0 +1,11 @@
+feature: Registration
+intent: Allow a new user to create an account securely.
+rules:
+  - id: REG-001
+    title: Email must be valid format.
+  - id: REG-002
+    title: Email must be unique.
+  - id: REG-003
+    title: Password length must be at least 8 characters.
+  - id: REG-004
+    title: Verification email is sent after successful registration.
