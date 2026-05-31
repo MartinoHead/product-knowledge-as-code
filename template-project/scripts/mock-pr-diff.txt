@@ -1,0 +1,4 @@
+# Simulated PR diff input for conference demos
+M src/auth/registration-service.ts
+M src/auth/login-service.ts
+M src/payments/checkout-orchestrator.ts

@@ -6,7 +6,12 @@
   "scripts": {
     "verify:sync": "node scripts/verify-sync.js",
     "generate:tests": "npm run verify:sync && node scripts/generate-tests.js && node scripts/generate-api-tests.js",
+    "generate:md-tests": "node scripts/generate-md-tests.js",
     "verify:coverage": "node scripts/rule-coverage.js",
+    "simulate:impact": "node scripts/simulate-pr-impact.js scripts/mock-pr-diff.txt",
+    "simulate:knowledge-update": "node scripts/simulate-knowledge-update.js docs/last-impact-report.json",
+    "demo:execute": "node scripts/mock-test-execution.js",
+    "demo:flow": "npm run simulate:impact && npm run simulate:knowledge-update && npm run generate:md-tests && npm run demo:execute",
     "test:api": "npx playwright test --config=playwright.api.config.ts",
     "test:ui": "npx playwright test",
     "test": "npm run test:api && npm run test:ui"

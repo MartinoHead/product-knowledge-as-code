@@ -1,5 +1,32 @@
 # Product Knowledge as Code
 
+## 30-Second Pitch
+
+This repository demonstrates a simple but powerful shift:
+
+- Product behavior in `knowledge/` is the source of truth.
+- Tests in `tests/` are generated artifacts.
+- AI agents (simulated here with scripts) analyze change impact and keep quality assets aligned.
+
+Conference flow:
+
+```text
+PR -> Knowledge Update -> Test Generation -> Execution -> Feedback -> Knowledge Evolution
+```
+
+Quick demo:
+
+```bash
+cd template-project
+npm install
+npm run simulate:impact
+npm run simulate:knowledge-update
+npm run generate:md-tests
+npm run demo:execute
+```
+
+Concept docs: `docs/pkac-conference-guide.md`
+
 ## Overview
 
 This repository demonstrates an alternative approach to software quality management in the age of AI.

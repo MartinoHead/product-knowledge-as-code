@@ -9,6 +9,11 @@ Enable users to complete purchases with clear validation and payment confirmatio
 - System authorizes payment.
 - Order confirmation is shown.
 
+## Expected Behavior
+- Checkout proceeds only when cart and required fields are valid.
+- Order is created only after successful payment authorization.
+- Confirmation includes a traceable order reference for support follow-up.
+
 ## Rules
 - CHK-001: Checkout requires at least one cart item.
 - CHK-002: Shipping address fields are mandatory.
@@ -21,3 +26,11 @@ Enable users to complete purchases with clear validation and payment confirmatio
 
 ## Non-Goals
 - Tax calculation rules.
+
+<!-- AGENT-LAST-UPDATE:START -->
+## Agent Update Note (Simulated)
+- timestamp: 2026-05-31T06:32:14.074Z
+- source: mock-pr-diff.txt
+- impact: checkout
+- keyword "checkout" matched: M src/payments/checkout-orchestrator.ts
+<!-- AGENT-LAST-UPDATE:END -->

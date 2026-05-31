@@ -8,6 +8,11 @@ Allow an authorized actor to create a new user account through API or admin work
 - System creates a new user record.
 - System returns created user identifier.
 
+## Expected Behavior
+- Unauthorized requests are rejected before business validation.
+- Duplicate identity constraints are enforced deterministically.
+- Successful creation returns a stable identifier for downstream calls.
+
 ## Rules
 - USR-001: Create user requires authorization.
 - USR-002: Create user requires unique email.

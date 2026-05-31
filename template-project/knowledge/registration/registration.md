@@ -8,6 +8,11 @@ Allow a new user to create an account securely.
 - System creates account.
 - System sends verification email.
 
+## Expected Behavior
+- Registration is rejected for invalid email formats and weak passwords.
+- Duplicate emails are blocked with a user-friendly error.
+- Successful registration always triggers a verification email.
+
 ## Rules
 - REG-001: Email must be valid format.
 - REG-002: Email must be unique.
@@ -21,3 +26,11 @@ Allow a new user to create an account securely.
 
 ## Non-Goals
 - Social login behavior.
+
+<!-- AGENT-LAST-UPDATE:START -->
+## Agent Update Note (Simulated)
+- timestamp: 2026-05-31T06:32:14.074Z
+- source: mock-pr-diff.txt
+- impact: registration
+- keyword "registration" matched: M src/auth/registration-service.ts
+<!-- AGENT-LAST-UPDATE:END -->

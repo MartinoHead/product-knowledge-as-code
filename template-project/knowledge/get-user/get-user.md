@@ -7,6 +7,11 @@ Allow authorized clients to retrieve user details by identifier.
 - Authorized request provides an existing user identifier.
 - System returns user details for that identifier.
 
+## Expected Behavior
+- Authorization is mandatory for all user read operations.
+- Existing identifiers return a complete user payload.
+- Invalid or unknown identifiers return explicit error outcomes.
+
 ## Rules
 - USG-001: Get user requires authorization.
 - USG-002: Get user requires existing user identifier.

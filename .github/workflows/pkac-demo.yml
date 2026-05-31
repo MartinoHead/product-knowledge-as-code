@@ -1,0 +1,43 @@
+name: pkac-demo
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conference-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: template-project
+        run: npm ci
+
+      - name: Simulate PR impact
+        working-directory: template-project
+        run: npm run simulate:impact
+
+      - name: Simulate agent knowledge markdown updates
+        working-directory: template-project
+        run: npm run simulate:knowledge-update
+
+      - name: Generate tests from knowledge markdown
+        working-directory: template-project
+        run: npm run generate:md-tests
+
+      - name: Mock execute and print result summary
+        working-directory: template-project
+        run: npm run demo:execute
+
+      - name: Show feedback artifact
+        working-directory: template-project
+        run: |
+          echo "--- docs/last-impact-report.md ---"
+          cat docs/last-impact-report.md
