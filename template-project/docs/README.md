@@ -9,6 +9,7 @@ From template-project:
 ```bash
 npm run simulate:impact
 npm run simulate:knowledge-update
+npm run analyze:pr-impact
 npm run generate:md-tests
 npm run demo:execute
 ```

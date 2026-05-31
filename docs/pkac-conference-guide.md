@@ -52,6 +52,23 @@ Result: the center of QA shifts from test case curation to knowledge curation.
 6. Results are captured.
 7. Feedback updates knowledge again.
 
+## Missing Link Implemented: PR Impact Analyzer
+
+Prototype command:
+
+```bash
+cd template-project
+node scripts/pr-impact-analyzer.js --input scripts/pr-impact-input.json
+```
+
+What it demonstrates:
+
+- Reads PR-like input (files changed + textual description).
+- Applies deterministic keyword-to-knowledge mapping.
+- Updates affected markdown knowledge files in-place.
+- Prints impacted files, applied updates, and patch-style deltas.
+- Prints next step to regenerate tests from updated knowledge.
+
 ## Architecture Diagram
 
 ```text

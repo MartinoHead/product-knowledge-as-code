@@ -1,0 +1,7 @@
+{
+  "filesChanged": [
+    "src/auth/register.ts",
+    "src/auth/validation.ts"
+  ],
+  "description": "Updated password validation to require 10 characters"
+}

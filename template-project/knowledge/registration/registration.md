@@ -16,7 +16,7 @@ Allow a new user to create an account securely.
 ## Rules
 - REG-001: Email must be valid format.
 - REG-002: Email must be unique.
-- REG-003: Password length must be at least 8 characters.
+- REG-003: Password length must be at least 10 characters.
 - REG-004: Verification email is sent after successful registration.
 
 ## Edge Cases
@@ -34,3 +34,10 @@ Allow a new user to create an account securely.
 - impact: registration
 - keyword "registration" matched: M src/auth/registration-service.ts
 <!-- AGENT-LAST-UPDATE:END -->
+
+<!-- PR-IMPACT:START -->
+## PR Impact Update (Prototype)
+- updatedAt: 2026-05-31T06:38:10.348Z
+- Password rule updated in REG-003: minimum length 8 -> 10.
+- Email validation behavior marked as impacted (REG-001/REG-002).
+<!-- PR-IMPACT:END -->
