@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_N = 16384;

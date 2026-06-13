@@ -1,6 +1,6 @@
 # Simulated PR Impact Report
 
-Generated: 2026-05-31T06:32:14.072Z
+Generated: 2026-06-13T12:08:36.978Z
 Input: mock-pr-diff.txt
 
 ## Changed Files (Simulated)

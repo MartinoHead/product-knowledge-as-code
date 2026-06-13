@@ -13,7 +13,7 @@ test('[REG-002] Email must be unique.', async ({ page }) => {
   // TODO: implement deterministic scenario for REG-002.
 });
 
-test('[REG-003] Password length must be at least 8 characters.', async ({ page }) => {
+test('[REG-003] Password length must be at least 10 characters.', async ({ page }) => {
   // Generated from knowledge/registration/registration.md
   // TODO: implement deterministic scenario for REG-003.
 });

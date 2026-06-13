@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 import { env } from '../config/env.js';
 
 const JWT_ALGORITHM = 'HS256';

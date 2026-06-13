@@ -62,6 +62,11 @@ Target structure when Tasks 1.1-1.3 are implemented:
 3. Test Data
 - Prefer generated unique emails/ids in tests to avoid cross-test collisions.
 
+4. Knowledge-Generated Artifacts in CI
+- CI runs knowledge-based test generation as part of the quality workflow.
+- PRs fail when generated outputs differ from committed files (`git diff --exit-code`).
+- Before pushing, run `npm run generate:tests` and commit any generated changes.
+
 ## Documentation Conventions
 
 1. Truthful OpenAPI

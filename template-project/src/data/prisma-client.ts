@@ -8,7 +8,6 @@ import pg from 'pg';
 // Requires DATABASE_URL env var — copy .env.example to .env.
 
 declare global {
-  // eslint-disable-next-line no-var
   var __prisma: PrismaClient | undefined;
 }
 

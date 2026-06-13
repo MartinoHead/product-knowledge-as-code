@@ -14,11 +14,19 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.13
 
       - name: Install dependencies
         working-directory: template-project
-        run: npm install
+        run: npm ci
+
+      - name: Lint
+        working-directory: template-project
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: template-project
+        run: npm run typecheck
 
       - name: Verify knowledge sync (md/yaml/gherkin)
         working-directory: template-project
@@ -27,6 +35,9 @@ jobs:
       - name: Generate tests from knowledge
         working-directory: template-project
         run: npm run generate:tests
+
+      - name: Fail on generated test drift
+        run: git diff --exit-code
 
       - name: Verify rule coverage
         working-directory: template-project

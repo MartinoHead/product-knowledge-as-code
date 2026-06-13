@@ -13,6 +13,8 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  void _next;
+
   if (res.headersSent) {
     return;
   }
