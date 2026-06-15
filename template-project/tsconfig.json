@@ -11,7 +11,6 @@
     "noEmit": true
   },
   "include": [
-    "src/**/*.ts",
     "playwright.config.ts",
     "playwright.api.config.ts",
     "tests/**/*.ts"

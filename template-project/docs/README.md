@@ -2,6 +2,12 @@
 
 This folder contains artifacts that support the conference demo story.
 
+## AI vs Simulation
+
+- Interactive local work may be AI-assisted (for example, Copilot in VS Code).
+- The commands in this folder are deterministic simulation scripts.
+- GitHub Actions demo workflows run the same simulation scripts; they do not invoke a hosted model.
+
 ## Demo Commands
 
 From template-project:

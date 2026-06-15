@@ -226,6 +226,57 @@ Build a production-like API service inside template-project that implements the 
 - Acceptance criteria:
   - One command can boot local stack.
 
+### Phase 6: LLM-Driven PR Intelligence (Planned)
+
+#### Task 6.1: Add LLM PR analysis orchestrator
+- Objective: replace rule-only impact inference with model-assisted PR analysis.
+- Detailed work:
+  - Implement a script that reads PR title/body/files/diff and calls an LLM API.
+  - Require strict JSON output with impacted features, proposed knowledge edits, rationale, and confidence.
+  - Persist analysis artifacts under docs for auditability.
+- Deliverables:
+  - scripts/analyze-pr-impact-llm.* and docs artifact output.
+- Acceptance criteria:
+  - Valid JSON analysis is produced for PR inputs.
+  - Script fails fast on malformed or non-JSON model responses.
+
+#### Task 6.2: Add deterministic validator and guarded knowledge apply step
+- Objective: ensure model output is safe and schema-compliant before file updates.
+- Detailed work:
+  - Validate model output against a strict schema.
+  - Allow edits only to permitted knowledge files and known rule IDs.
+  - Enforce bounded-change limits (for example max files/lines changed).
+  - Add fallback path to deterministic simulation when model path is unavailable.
+- Deliverables:
+  - scripts/validate-llm-impact.* and scripts/apply-knowledge-updates-llm.*.
+- Acceptance criteria:
+  - Invalid/unsafe edits are blocked.
+  - Approved edits are applied deterministically and are reproducible.
+
+#### Task 6.3: Wire GitHub Actions for model-backed PR flow
+- Objective: run LLM-based analysis in CI with governance controls.
+- Detailed work:
+  - Add workflow steps to build PR context from GitHub event payload.
+  - Call LLM analysis script using repository secrets.
+  - Upload analysis/apply artifacts and post PR summary comment.
+  - Gate merge on validation, sync, coverage, generation drift, and tests.
+- Deliverables:
+  - Updated demo/quality workflow jobs for AI path with deterministic fallback.
+- Acceptance criteria:
+  - CI executes model-backed analysis when secrets are available.
+  - CI automatically falls back or fails with clear diagnostics when unavailable.
+
+#### Task 6.4: Introduce rollout stages (analyze-only -> apply mode)
+- Objective: reduce risk while adopting model-driven updates.
+- Detailed work:
+  - Stage 1: analyze-only mode (no file mutations in CI), publish suggested patch artifacts.
+  - Stage 2: guarded apply mode behind explicit workflow input/env flag.
+  - Stage 3: default apply mode after stability targets are met.
+- Deliverables:
+  - rollout documentation and workflow toggles.
+- Acceptance criteria:
+  - Stage transitions are controlled, documented, and reversible.
+
 ## Cross-Cutting Standards
 - API response format should be consistent across all endpoints.
 - Error codes and messages should be deterministic and documented.
@@ -298,6 +349,9 @@ Build a production-like API service inside template-project that implements the 
 10. Add security middleware (centralized validation, rate limiting, CORS, secure headers). (Completed 2026-06-12)
 11. Wire full CI gates for lint/typecheck/tests/verify:sync/verify:coverage. (Completed 2026-06-13)
 12. Add API Dockerfile + runbook + observability baseline.
+13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output.
+14. Add validator + guarded knowledge apply step with deterministic fallback.
+15. Update GitHub workflows for analyze-only model path, then staged apply mode.
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.

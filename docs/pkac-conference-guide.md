@@ -10,6 +10,15 @@ In short:
 - Generated tests are disposable outputs.
 - AI-agent behavior is represented by deterministic scripts in this prototype.
 
+## AI Usage Boundaries (Important)
+
+To avoid ambiguity during demos, this prototype separates interactive AI help from automated pipeline behavior:
+
+- Local interactive authoring (for example, using Copilot in VS Code) can use a real AI model.
+- Local scripted flow (`npm run simulate:*`, `npm run demo:flow`) is deterministic simulation, not a model call.
+- CI workflows in GitHub Actions use the same deterministic scripts; they do not call a hosted LLM.
+- This keeps CI reproducible, auditable, and independent from model availability or API credentials.
+
 ## Why This Matters
 
 Traditional test case management systems optimize for manual test inventory maintenance.
@@ -45,7 +54,7 @@ Result: the center of QA shifts from test case curation to knowledge curation.
 ## End-to-End Lifecycle
 
 1. Pull request changes business logic.
-2. Impact analysis maps code changes to impacted behavior areas.
+2. Impact analysis maps code changes to impacted behavior areas (deterministic mapping in this prototype).
 3. Knowledge markdown is updated (simulated agent update in this prototype).
 4. Tests are regenerated from knowledge.
 5. CI executes tests (or mock execution in this prototype).
