@@ -348,7 +348,7 @@ Build a production-like API service inside template-project that implements the 
 9. Replace in-memory route flows with Prisma-backed services/repositories. (In progress 2026-06-12)
 10. Add security middleware (centralized validation, rate limiting, CORS, secure headers). (Completed 2026-06-12)
 11. Wire full CI gates for lint/typecheck/tests/verify:sync/verify:coverage. (Completed 2026-06-13)
-12. Add API Dockerfile + runbook + observability baseline.
+12. Add API Dockerfile + runbook + observability baseline. (Completed 2026-06-15)
 13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output.
 14. Add validator + guarded knowledge apply step with deterministic fallback.
 15. Update GitHub workflows for analyze-only model path, then staged apply mode.
@@ -416,3 +416,7 @@ Build a production-like API service inside template-project that implements the 
 - Fixed Prisma seed initialization for Prisma 7 config by requiring `.env` and using `@prisma/adapter-pg` with `pg.Pool`.
 - Confirmed lint, typecheck, verify:sync, verify:coverage, and API test gates pass locally after middleware and lint fixes.
 - Updated CI quality workflow to enforce `lint`, `typecheck`, `verify:sync`, `verify:coverage`, and API/UI test execution.
+- 2026-06-15: Completed Task 12 deployability and observability baseline.
+- Added production API Dockerfile and `.dockerignore` for containerized runtime.
+- Added operations runbook: `docs/api-runbook.md`.
+- Added request-level structured logging middleware and Prometheus-style `/metrics` endpoint guarded by `METRICS_ENABLED`.

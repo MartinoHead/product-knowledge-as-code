@@ -10,10 +10,15 @@ import {
   rateLimitMiddleware,
   secureHeadersMiddleware,
 } from './middleware/security.js';
+import {
+  observabilityMiddleware,
+  renderMetricsText,
+} from './middleware/observability.js';
 
 const API_PREFIX_HEADER_NAME = 'x-api-prefix';
 const API_DOCS_PATH = '/docs';
 const OPEN_API_JSON_PATH = '/openapi.json';
+const METRICS_PATH = '/metrics';
 
 export function createApp() {
   const app = express();
@@ -24,6 +29,7 @@ export function createApp() {
   app.use(secureHeadersMiddleware);
   app.use(corsMiddleware);
   app.use(rateLimitMiddleware);
+  app.use(observabilityMiddleware);
   app.use(express.json());
 
   app.use((_req, res, next) => {
@@ -44,6 +50,12 @@ export function createApp() {
       docs: API_DOCS_PATH,
     });
   });
+
+  if (env.metricsEnabled) {
+    app.get(METRICS_PATH, (_req, res) => {
+      res.type('text/plain; version=0.0.4').send(renderMetricsText());
+    });
+  }
 
   app.use(apiPrefix, apiRouter);
   app.use(notFoundHandler);

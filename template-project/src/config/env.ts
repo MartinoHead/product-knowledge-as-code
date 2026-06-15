@@ -5,6 +5,7 @@ const DEFAULT_API_VERSION = 'v1';
 const DEFAULT_JWT_EXPIRES_IN_SEC = 60 * 60;
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 120;
+const DEFAULT_METRICS_ENABLED = true;
 
 function parsePositiveInteger(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -33,6 +34,24 @@ function parseApiVersion(value: string | undefined): string {
   return normalized || DEFAULT_API_VERSION;
 }
 
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+}
+
 function parseCorsAllowedOrigins(value: string | undefined): '*' | string[] {
   const raw = (value || '*').trim();
 
@@ -58,4 +77,5 @@ export const env = {
   corsAllowedOrigins: parseCorsAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
   rateLimitWindowMs: parsePositiveInteger(process.env.RATE_LIMIT_WINDOW_MS, DEFAULT_RATE_LIMIT_WINDOW_MS),
   rateLimitMaxRequests: parsePositiveInteger(process.env.RATE_LIMIT_MAX_REQUESTS, DEFAULT_RATE_LIMIT_MAX_REQUESTS),
+  metricsEnabled: parseBoolean(process.env.METRICS_ENABLED, DEFAULT_METRICS_ENABLED),
 };
