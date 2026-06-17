@@ -5,8 +5,8 @@ This folder contains artifacts that support the conference demo story.
 ## AI vs Simulation
 
 - Interactive local work may be AI-assisted (for example, Copilot in VS Code).
-- The commands in this folder are deterministic simulation scripts.
-- GitHub Actions demo workflows run the same simulation scripts; they do not invoke a hosted model.
+- This project supports two analysis paths: `simulate` and `real` (LLM staged with deterministic fallback).
+- GitHub Actions workflow supports all modes via `flow_mode`: `simulate`, `real`, `both`.
 
 ## Demo Commands
 
@@ -15,7 +15,12 @@ From template-project:
 ```bash
 npm run simulate:impact
 npm run simulate:knowledge-update
+npm run prepare:pr-input
 npm run analyze:pr-impact
+npm run analyze:pr-impact:llm
+npm run analyze:pr-impact:staged
+npm run validate:llm-impact
+npm run apply:knowledge:llm
 npm run simulate:closed-loop
 npm run generate:md-tests
 npm run demo:execute
@@ -26,6 +31,64 @@ Or run the full flow:
 ```bash
 npm run demo:flow
 ```
+
+## Usage Examples
+
+### 1) Local Simulate Flow
+
+```bash
+npm run simulate:impact
+npm run simulate:knowledge-update
+npm run generate:md-tests
+npm run demo:execute
+```
+
+Outputs:
+- `docs/last-impact-report.json`
+- `docs/last-impact-report.md`
+
+### 2) Local Real Analysis (Staged)
+
+Prerequisite:
+- Set `OPENAI_API_KEY` in your environment (or `.env`).
+
+```bash
+npm run prepare:pr-input
+npm run analyze:pr-impact:staged
+npm run validate:llm-impact
+npm run apply:knowledge:llm
+```
+
+Notes:
+- `apply:knowledge:llm` is dry-run by default.
+- To allow file changes, set `APPLY_LLM_KNOWLEDGE_UPDATES=true`.
+
+Outputs:
+- `docs/llm-impact-analysis.json`
+- `docs/llm-impact-analysis.md`
+- `docs/llm-impact-validation.json`
+- `docs/llm-knowledge-apply.json`
+
+### 3) GitHub Actions Simulate Only
+
+Run `pkac-demo-flow` with:
+- `flow_mode=simulate`
+
+### 4) GitHub Actions Real Analysis Only
+
+Run `pkac-demo-flow` with:
+- `flow_mode=real`
+
+Optional repository settings for real mode:
+- Secret: `OPENAI_API_KEY`
+- Variables: `OPENAI_MODEL`, `OPENAI_BASE_URL`
+
+### 5) GitHub Actions Both Paths
+
+Run `pkac-demo-flow` with:
+- `flow_mode=both`
+
+For `pull_request` triggers, default behavior is `both`.
 
 ## Flow
 

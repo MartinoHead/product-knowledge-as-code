@@ -1,7 +1,6 @@
 {
   "filesChanged": [
-    "src/auth/register.ts",
-    "src/auth/validation.ts"
+    "M src/local-run.txt"
   ],
-  "description": "Updated password validation to require 10 characters"
+  "description": "Local run without GitHub event payload."
 }

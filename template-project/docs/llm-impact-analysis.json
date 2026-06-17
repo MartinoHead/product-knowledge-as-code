@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-06-17T08:16:43.742Z",
+  "inputFile": "scripts/pr-impact-input.json",
+  "model": "deterministic-fallback",
+  "impactAnalysis": {
+    "schemaVersion": "1.0",
+    "summary": "Fallback impact analysis generated from deterministic simulation.",
+    "confidence": 0.5,
+    "impactedFeatures": [
+      {
+        "feature": "checkout",
+        "confidence": 0.5,
+        "reasons": [
+          "keyword \"checkout\" matched: M src/payments/checkout-orchestrator.ts"
+        ]
+      },
+      {
+        "feature": "login",
+        "confidence": 0.5,
+        "reasons": [
+          "keyword \"auth\" matched: M src/auth/registration-service.ts",
+          "keyword \"login\" matched: M src/auth/login-service.ts"
+        ]
+      },
+      {
+        "feature": "registration",
+        "confidence": 0.5,
+        "reasons": [
+          "keyword \"registration\" matched: M src/auth/registration-service.ts"
+        ]
+      }
+    ],
+    "proposedKnowledgeEdits": [
+      {
+        "file": "knowledge/checkout/checkout.md",
+        "ruleId": "REVIEW-ONLY",
+        "action": "review",
+        "rationale": "Generated from deterministic keyword mapping fallback path.",
+        "suggestedText": "Review impacted rules and update knowledge if needed."
+      },
+      {
+        "file": "knowledge/login/login.md",
+        "ruleId": "REVIEW-ONLY",
+        "action": "review",
+        "rationale": "Generated from deterministic keyword mapping fallback path.",
+        "suggestedText": "Review impacted rules and update knowledge if needed."
+      },
+      {
+        "file": "knowledge/registration/registration.md",
+        "ruleId": "REVIEW-ONLY",
+        "action": "review",
+        "rationale": "Generated from deterministic keyword mapping fallback path.",
+        "suggestedText": "Review impacted rules and update knowledge if needed."
+      }
+    ],
+    "testPlan": [
+      {
+        "feature": "checkout",
+        "ruleIds": [],
+        "suggestedTests": [
+          "Regenerate and review tests for checkout"
+        ]
+      },
+      {
+        "feature": "login",
+        "ruleIds": [],
+        "suggestedTests": [
+          "Regenerate and review tests for login"
+        ]
+      },
+      {
+        "feature": "registration",
+        "ruleIds": [],
+        "suggestedTests": [
+          "Regenerate and review tests for registration"
+        ]
+      }
+    ]
+  }
+}

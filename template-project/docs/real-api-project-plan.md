@@ -349,9 +349,9 @@ Build a production-like API service inside template-project that implements the 
 10. Add security middleware (centralized validation, rate limiting, CORS, secure headers). (Completed 2026-06-12)
 11. Wire full CI gates for lint/typecheck/tests/verify:sync/verify:coverage. (Completed 2026-06-13)
 12. Add API Dockerfile + runbook + observability baseline. (Completed 2026-06-15)
-13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output.
-14. Add validator + guarded knowledge apply step with deterministic fallback.
-15. Update GitHub workflows for analyze-only model path, then staged apply mode.
+13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output. (Completed 2026-06-15)
+14. Add validator + guarded knowledge apply step with deterministic fallback. (Completed 2026-06-17)
+15. Update GitHub workflows for analyze-only model path, then staged apply mode. (In progress 2026-06-17)
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.
@@ -420,3 +420,12 @@ Build a production-like API service inside template-project that implements the 
 - Added production API Dockerfile and `.dockerignore` for containerized runtime.
 - Added operations runbook: `docs/api-runbook.md`.
 - Added request-level structured logging middleware and Prometheus-style `/metrics` endpoint guarded by `METRICS_ENABLED`.
+- 2026-06-15: Completed Task 13 LLM PR analysis orchestrator (analyze-only).
+- Added `scripts/analyze-pr-impact-llm.js` with strict JSON schema validation and artifact output in `docs/`.
+- Added npm command `analyze:pr-impact:llm` and documented required LLM environment variables.
+- 2026-06-17: Completed Task 14 validator + guarded apply + deterministic fallback.
+- Added `scripts/validate-llm-impact.js` for deterministic guardrails on LLM output.
+- Added `scripts/apply-knowledge-updates-llm.js` for dry-run/apply behavior with bounded-change limits.
+- Added `scripts/run-pr-impact-analysis-staged.js` to run LLM analysis with automatic deterministic fallback.
+- 2026-06-17: Started Task 15 workflow wiring in analyze-only mode.
+- Updated `template-project/.github/workflows/pkac-demo-flow.yml` to run staged analysis, validation, dry-run apply, and publish artifacts.

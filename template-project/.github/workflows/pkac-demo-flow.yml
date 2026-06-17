@@ -3,10 +3,22 @@ name: pkac-demo-flow
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      flow_mode:
+        description: "Which analysis path to run"
+        type: choice
+        required: true
+        default: both
+        options:
+          - simulate
+          - real
+          - both
 
 jobs:
   demo-flow:
     runs-on: ubuntu-latest
+    env:
+      FLOW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.flow_mode || 'both' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,17 +26,43 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.13
 
       - name: Install dependencies
         working-directory: template-project
         run: npm ci
 
+      - name: Prepare PR impact input
+        if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
+        working-directory: template-project
+        run: npm run prepare:pr-input
+
+      - name: Analyze PR impact (LLM staged with deterministic fallback)
+        if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
+        working-directory: template-project
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+        run: npm run analyze:pr-impact:staged
+
+      - name: Validate LLM impact artifact
+        if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
+        working-directory: template-project
+        run: npm run validate:llm-impact
+
+      - name: Apply knowledge updates (dry run only)
+        if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
+        working-directory: template-project
+        run: npm run apply:knowledge:llm
+
       - name: Simulate PR impact analysis
+        if: ${{ env.FLOW_MODE == 'simulate' || env.FLOW_MODE == 'both' }}
         working-directory: template-project
         run: npm run simulate:impact
 
-      - name: Simulate agent markdown knowledge update
+      - name: Simulate agent markdown knowledge update (legacy demo step)
+        if: ${{ env.FLOW_MODE == 'simulate' || env.FLOW_MODE == 'both' }}
         working-directory: template-project
         run: npm run simulate:knowledge-update
 
@@ -39,5 +77,24 @@ jobs:
       - name: Publish impact report in logs
         working-directory: template-project
         run: |
-          echo "--- Impact Report ---"
-          cat docs/last-impact-report.md
+          if [ -f docs/last-impact-report.md ]; then
+            echo "--- Impact Report ---"
+            cat docs/last-impact-report.md
+          fi
+          if [ -f docs/llm-impact-analysis.md ]; then
+            echo "--- LLM Impact Report ---"
+            cat docs/llm-impact-analysis.md
+          fi
+
+      - name: Upload PR impact artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-impact-artifacts
+          if-no-files-found: warn
+          path: |
+            template-project/docs/last-impact-report.json
+            template-project/docs/last-impact-report.md
+            template-project/docs/llm-impact-analysis.json
+            template-project/docs/llm-impact-analysis.md
+            template-project/docs/llm-impact-validation.json
+            template-project/docs/llm-knowledge-apply.json

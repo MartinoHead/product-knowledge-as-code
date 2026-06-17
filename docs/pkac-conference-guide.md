@@ -15,8 +15,8 @@ In short:
 To avoid ambiguity during demos, this prototype separates interactive AI help from automated pipeline behavior:
 
 - Local interactive authoring (for example, using Copilot in VS Code) can use a real AI model.
-- Local scripted flow (`npm run simulate:*`, `npm run demo:flow`) is deterministic simulation, not a model call.
-- CI workflows in GitHub Actions use the same deterministic scripts; they do not call a hosted LLM.
+- Local scripted flow supports both deterministic simulation and staged LLM analysis with deterministic fallback.
+- CI workflows in GitHub Actions can run `simulate`, `real`, or `both` modes via workflow input.
 - This keeps CI reproducible, auditable, and independent from model availability or API credentials.
 
 ## Why This Matters
