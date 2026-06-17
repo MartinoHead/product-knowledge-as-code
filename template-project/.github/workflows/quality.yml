@@ -102,6 +102,13 @@ jobs:
       - name: Fail on generated test drift
         run: git diff --exit-code
 
+      - name: Generate OpenAPI document
+        working-directory: template-project
+        run: npm run generate:openapi
+
+      - name: Fail on OpenAPI drift
+        run: git diff --exit-code -- template-project/docs/openapi.json
+
       - name: Verify rule coverage
         working-directory: template-project
         run: npm run verify:coverage

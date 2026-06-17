@@ -131,7 +131,7 @@ export function createOpenApiDocument() {
               },
             },
             '400': {
-              description: 'Input validation failed (invalid email or weak password).',
+              description: 'Input validation failed. Possible causes: invalid email format, weak password, non-object body, or malformed JSON.',
               headers: {
                 [API_PREFIX_HEADER_NAME]: {
                   $ref: '#/components/headers/ApiPrefixHeader',
@@ -140,7 +140,11 @@ export function createOpenApiDocument() {
               content: {
                 'application/json': {
                   schema: {
-                    $ref: '#/components/schemas/ValidationErrorResponse',
+                    oneOf: [
+                      { $ref: '#/components/schemas/ValidationErrorResponse' },
+                      { $ref: '#/components/schemas/InvalidRequestResponse' },
+                      { $ref: '#/components/schemas/InvalidJsonResponse' },
+                    ],
                   },
                 },
               },
@@ -156,6 +160,36 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     $ref: '#/components/schemas/DuplicateEmailResponse',
+                  },
+                },
+              },
+            },
+            '429': {
+              description: 'Too many requests. Rate limit exceeded.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Unexpected server error.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/InternalErrorResponse',
                   },
                 },
               },
@@ -194,6 +228,24 @@ export function createOpenApiDocument() {
                 },
               },
             },
+            '400': {
+              description: 'Request body is not a valid JSON object.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    oneOf: [
+                      { $ref: '#/components/schemas/InvalidRequestResponse' },
+                      { $ref: '#/components/schemas/InvalidJsonResponse' },
+                    ],
+                  },
+                },
+              },
+            },
             '401': {
               description: 'Authentication failed due to unknown email or invalid password.',
               headers: {
@@ -220,6 +272,36 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     $ref: '#/components/schemas/AccountLockedResponse',
+                  },
+                },
+              },
+            },
+            '429': {
+              description: 'Too many requests. Rate limit exceeded.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Unexpected server error.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/InternalErrorResponse',
                   },
                 },
               },
@@ -259,7 +341,7 @@ export function createOpenApiDocument() {
               },
             },
             '400': {
-              description: 'Create-user request payload is invalid.',
+              description: 'Create-user request payload is invalid or malformed.',
               headers: {
                 [API_PREFIX_HEADER_NAME]: {
                   $ref: '#/components/headers/ApiPrefixHeader',
@@ -268,7 +350,10 @@ export function createOpenApiDocument() {
               content: {
                 'application/json': {
                   schema: {
-                    $ref: '#/components/schemas/InvalidRequestResponse',
+                    oneOf: [
+                      { $ref: '#/components/schemas/InvalidRequestResponse' },
+                      { $ref: '#/components/schemas/InvalidJsonResponse' },
+                    ],
                   },
                 },
               },
@@ -299,6 +384,36 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     $ref: '#/components/schemas/CreateUserDuplicateEmailResponse',
+                  },
+                },
+              },
+            },
+            '429': {
+              description: 'Too many requests. Rate limit exceeded.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Unexpected server error.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/InternalErrorResponse',
                   },
                 },
               },
@@ -368,6 +483,36 @@ export function createOpenApiDocument() {
                 },
               },
             },
+            '429': {
+              description: 'Too many requests. Rate limit exceeded.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Unexpected server error.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/InternalErrorResponse',
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -403,7 +548,7 @@ export function createOpenApiDocument() {
               },
             },
             '400': {
-              description: 'Checkout request failed cart or shipping validation.',
+              description: 'Checkout request failed cart, shipping, body object, or JSON validation.',
               headers: {
                 [API_PREFIX_HEADER_NAME]: {
                   $ref: '#/components/headers/ApiPrefixHeader',
@@ -413,12 +558,10 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     oneOf: [
-                      {
-                        $ref: '#/components/schemas/EmptyCartResponse',
-                      },
-                      {
-                        $ref: '#/components/schemas/InvalidShippingAddressResponse',
-                      },
+                      { $ref: '#/components/schemas/EmptyCartResponse' },
+                      { $ref: '#/components/schemas/InvalidShippingAddressResponse' },
+                      { $ref: '#/components/schemas/InvalidRequestResponse' },
+                      { $ref: '#/components/schemas/InvalidJsonResponse' },
                     ],
                   },
                 },
@@ -436,6 +579,61 @@ export function createOpenApiDocument() {
                   schema: {
                     $ref: '#/components/schemas/PaymentNotAuthorizedResponse',
                   },
+                },
+              },
+            },
+            '429': {
+              description: 'Too many requests. Rate limit exceeded.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Unexpected server error.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/InternalErrorResponse',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/metrics': {
+        get: {
+          tags: ['System'],
+          summary: 'Get Prometheus-style service metrics',
+          description: 'Returns runtime counters in Prometheus text exposition format. Only available when METRICS_ENABLED=true.',
+          responses: {
+            '200': {
+              description: 'Metrics returned in Prometheus text format.',
+              content: {
+                'text/plain': {
+                  schema: { type: 'string', example: 'http_requests_total 42' },
+                },
+              },
+            },
+            '404': {
+              description: 'Metrics endpoint is disabled (METRICS_ENABLED is not set).',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/NotFoundResponse' },
                 },
               },
             },
@@ -674,6 +872,30 @@ export function createOpenApiDocument() {
               type: 'string',
               example: 'Payment authorization is required before order creation.',
             },
+          },
+          required: ['error', 'message'],
+        },
+        RateLimitedResponse: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', enum: ['rate_limited'] },
+            message: { type: 'string', example: 'Too many requests. Try again later.' },
+          },
+          required: ['error', 'message'],
+        },
+        InternalErrorResponse: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', enum: ['internal_error'] },
+            message: { type: 'string', example: 'Unexpected server error.' },
+          },
+          required: ['error', 'message'],
+        },
+        InvalidJsonResponse: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', enum: ['invalid_json'] },
+            message: { type: 'string', example: 'Request body must be valid JSON.' },
           },
           required: ['error', 'message'],
         },

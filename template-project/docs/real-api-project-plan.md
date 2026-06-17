@@ -352,7 +352,7 @@ Build a production-like API service inside template-project that implements the 
 13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output. (Completed 2026-06-15)
 14. Add validator + guarded knowledge apply step with deterministic fallback. (Completed 2026-06-17)
 15. Update GitHub workflows for analyze-only model path, then staged apply mode. (Completed 2026-06-17)
-16. Expand Swagger/OpenAPI documentation coverage and upkeep process for all current API behavior. (Planned 2026-06-17)
+16. Expand Swagger/OpenAPI documentation coverage and upkeep process for all current API behavior. (Completed 2026-06-17)
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.
@@ -434,3 +434,11 @@ Build a production-like API service inside template-project that implements the 
 - Added `flow_mode` and `apply_mode` toggles to `template-project/.github/workflows/pkac-demo-flow.yml` and `template-project/.github/workflows/quality.yml`.
 - Added staged analysis + guarded apply path to `quality.yml` with deterministic fallback and artifact uploads.
 - Added sticky PR impact summary comments (update-in-place) in both workflows for audit visibility.
+- 2026-06-17: Completed Task 16 OpenAPI documentation coverage and upkeep.
+- Added `RateLimitedResponse`, `InternalErrorResponse`, and `InvalidJsonResponse` schemas to OpenAPI document.
+- Added `429` and `500` responses to all endpoints; added `400` generic body error to all POST endpoints via oneOf.
+- Added `/metrics` endpoint documentation.
+- Added `scripts/export-openapi.ts` and `scripts/verify-openapi.js` for snapshot generation and drift detection.
+- Added `generate:openapi` and `verify:openapi` npm scripts.
+- Added OpenAPI drift gate to `quality.yml` CI workflow.
+- Generated initial `docs/openapi.json` snapshot.

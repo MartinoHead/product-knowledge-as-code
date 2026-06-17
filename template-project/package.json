@@ -12,6 +12,8 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
+    "generate:openapi": "tsx scripts/export-openapi.ts",
+    "verify:openapi": "node scripts/verify-openapi.js",
     "verify:sync": "node scripts/verify-sync.js",
     "generate:tests": "npm run verify:sync && node scripts/generate-tests.js && node scripts/generate-api-tests.js",
     "generate:md-tests": "node scripts/generate-md-tests.js",
