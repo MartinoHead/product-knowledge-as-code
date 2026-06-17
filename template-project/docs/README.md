@@ -6,7 +6,8 @@ This folder contains artifacts that support the conference demo story.
 
 - Interactive local work may be AI-assisted (for example, Copilot in VS Code).
 - This project supports two analysis paths: `simulate` and `real` (LLM staged with deterministic fallback).
-- GitHub Actions workflow supports all modes via `flow_mode`: `simulate`, `real`, `both`.
+- GitHub Actions workflows support all modes via `flow_mode`: `simulate`, `real`, `both`.
+- Knowledge mutations are rollout-controlled in workflows via `apply_mode`: `dry-run` (default) or `apply`.
 
 ## Demo Commands
 
@@ -73,11 +74,13 @@ Outputs:
 
 Run `pkac-demo-flow` with:
 - `flow_mode=simulate`
+- `apply_mode=dry-run`
 
 ### 4) GitHub Actions Real Analysis Only
 
 Run `pkac-demo-flow` with:
 - `flow_mode=real`
+- `apply_mode=dry-run` (recommended for analyze-only rollout)
 
 Optional repository settings for real mode:
 - Secret: `OPENAI_API_KEY`
@@ -87,8 +90,19 @@ Optional repository settings for real mode:
 
 Run `pkac-demo-flow` with:
 - `flow_mode=both`
+- `apply_mode=dry-run` or `apply`
 
 For `pull_request` triggers, default behavior is `both`.
+
+### 6) GitHub Actions Quality Workflow (Gated)
+
+Run `bda-quality` with:
+- `flow_mode=simulate|real|both`
+- `apply_mode=dry-run|apply`
+
+Notes:
+- `pull_request` defaults to `flow_mode=both` and `apply_mode=dry-run`.
+- Both workflows upload impact artifacts and maintain a sticky PR impact summary comment.
 
 ## Flow
 

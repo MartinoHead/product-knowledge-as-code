@@ -13,12 +13,24 @@ on:
           - simulate
           - real
           - both
+      apply_mode:
+        description: "Knowledge apply mode for LLM path"
+        type: choice
+        required: true
+        default: dry-run
+        options:
+          - dry-run
+          - apply
 
 jobs:
   demo-flow:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       FLOW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.flow_mode || 'both' }}
+      APPLY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_mode || 'dry-run' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,10 +63,15 @@ jobs:
         working-directory: template-project
         run: npm run validate:llm-impact
 
-      - name: Apply knowledge updates (dry run only)
+      - name: Apply knowledge updates (rollout controlled)
         if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
         working-directory: template-project
-        run: npm run apply:knowledge:llm
+        run: |
+          if [ "${APPLY_MODE}" = "apply" ]; then
+            APPLY_LLM_KNOWLEDGE_UPDATES=true npm run apply:knowledge:llm -- --apply
+          else
+            npm run apply:knowledge:llm
+          fi
 
       - name: Simulate PR impact analysis
         if: ${{ env.FLOW_MODE == 'simulate' || env.FLOW_MODE == 'both' }}
@@ -96,5 +113,60 @@ jobs:
             template-project/docs/last-impact-report.md
             template-project/docs/llm-impact-analysis.json
             template-project/docs/llm-impact-analysis.md
+            template-project/docs/llm-impact-analysis.raw.json
             template-project/docs/llm-impact-validation.json
             template-project/docs/llm-knowledge-apply.json
+
+      - name: Comment PR with impact summary
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- pkac-impact-summary -->';
+            const reportPath = 'template-project/docs/llm-impact-analysis.md';
+            const fallbackPath = 'template-project/docs/last-impact-report.md';
+            const mode = process.env.FLOW_MODE;
+            const applyMode = process.env.APPLY_MODE;
+
+            let report = '';
+            if (fs.existsSync(reportPath)) {
+              report = fs.readFileSync(reportPath, 'utf8').trim();
+            } else if (fs.existsSync(fallbackPath)) {
+              report = fs.readFileSync(fallbackPath, 'utf8').trim();
+            }
+
+            const body = [
+              marker,
+              '## PKaC PR Impact Summary',
+              `- Flow mode: ${mode}`,
+              `- Apply mode: ${applyMode}`,
+              '',
+              report || '_No impact report was generated._'
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+            }

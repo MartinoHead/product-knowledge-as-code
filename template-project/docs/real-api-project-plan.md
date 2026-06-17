@@ -351,7 +351,8 @@ Build a production-like API service inside template-project that implements the 
 12. Add API Dockerfile + runbook + observability baseline. (Completed 2026-06-15)
 13. Add LLM PR analysis orchestrator with strict JSON schema and artifact output. (Completed 2026-06-15)
 14. Add validator + guarded knowledge apply step with deterministic fallback. (Completed 2026-06-17)
-15. Update GitHub workflows for analyze-only model path, then staged apply mode. (In progress 2026-06-17)
+15. Update GitHub workflows for analyze-only model path, then staged apply mode. (Completed 2026-06-17)
+16. Expand Swagger/OpenAPI documentation coverage and upkeep process for all current API behavior. (Planned 2026-06-17)
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.
@@ -429,3 +430,7 @@ Build a production-like API service inside template-project that implements the 
 - Added `scripts/run-pr-impact-analysis-staged.js` to run LLM analysis with automatic deterministic fallback.
 - 2026-06-17: Started Task 15 workflow wiring in analyze-only mode.
 - Updated `template-project/.github/workflows/pkac-demo-flow.yml` to run staged analysis, validation, dry-run apply, and publish artifacts.
+- 2026-06-17: Completed Task 15 workflow rollout controls and CI parity.
+- Added `flow_mode` and `apply_mode` toggles to `template-project/.github/workflows/pkac-demo-flow.yml` and `template-project/.github/workflows/quality.yml`.
+- Added staged analysis + guarded apply path to `quality.yml` with deterministic fallback and artifact uploads.
+- Added sticky PR impact summary comments (update-in-place) in both workflows for audit visibility.
