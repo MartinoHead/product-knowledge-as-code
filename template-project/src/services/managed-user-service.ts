@@ -37,6 +37,19 @@ export async function createManagedUser(input: {
     };
   }
 
+  // Validate email domain against whitelist
+  const allowedDomains = ['example.com', 'company.com', 'test.local'];
+  const emailDomain = email.split('@')[1];
+  if (!allowedDomains.includes(emailDomain)) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid_request',
+        message: `Email domain must be one of: ${allowedDomains.join(', ')}.`,
+      },
+    };
+  }
+
   // Phone is optional but if provided, must be at least 10 digits
   if (phone && phone.replace(/\D/g, '').length < 10) {
     return {
