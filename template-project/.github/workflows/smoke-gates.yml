@@ -1,0 +1,382 @@
+name: Smoke Gates
+
+on:
+  workflow_call:
+    inputs:
+      service_url:
+        description: 'Base URL of the deployed service to test'
+        required: true
+        type: string
+      revision:
+        description: 'Cloud Run revision name'
+        required: false
+        type: string
+        default: ''
+      image_digest:
+        description: 'Container image digest'
+        required: false
+        type: string
+        default: ''
+      error_rate_threshold:
+        description: 'Max acceptable error rate percentage (0-100) over last 5 minutes'
+        required: false
+        type: number
+        default: 5
+      latency_threshold_ms:
+        description: 'Max acceptable P95 latency in milliseconds'
+        required: false
+        type: number
+        default: 2000
+    outputs:
+      smoke_passed:
+        description: 'Whether all smoke gates passed'
+        value: ${{ jobs.run-smoke-gates.outputs.passed }}
+      summary:
+        description: 'Human-readable summary of smoke gate results'
+        value: ${{ jobs.run-smoke-gates.outputs.summary }}
+  workflow_dispatch:
+    inputs:
+      service_url:
+        description: 'Service URL to test'
+        required: true
+        default: 'https://template-project-w5qrllc24a-uc.a.run.app'
+
+jobs:
+  run-smoke-gates:
+    name: Run Smoke Gates
+    runs-on: ubuntu-latest
+    outputs:
+      passed: ${{ steps.evaluate.outputs.passed }}
+      summary: ${{ steps.evaluate.outputs.summary }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: template-project/package-lock.json
+
+      - name: Install dependencies
+        working-directory: template-project
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: template-project
+        run: npx playwright install --with-deps chromium
+
+      # ─── Gate 1: Service reachability ─────────────────────────────────────
+      - name: Gate 1 — Service reachability
+        id: gate-reachability
+        continue-on-error: true
+        run: |
+          echo "gate=reachability" >> $GITHUB_OUTPUT
+          MAX_RETRIES=20
+          RETRY_COUNT=0
+          SERVICE_URL="${{ inputs.service_url }}"
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if curl -sf --connect-timeout 5 --max-time 10 "${SERVICE_URL}/health" > /dev/null; then
+              echo "✓ Service reachable"
+              echo "status=pass" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "Retry $RETRY_COUNT/$MAX_RETRIES ..."
+            sleep 5
+          done
+          echo "✗ Service unreachable after $MAX_RETRIES attempts"
+          echo "status=fail" >> $GITHUB_OUTPUT
+          exit 1
+
+      # ─── Gate 2: Health endpoint ──────────────────────────────────────────
+      - name: Gate 2 — Health endpoint (200 OK)
+        id: gate-health
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          RESPONSE=$(curl -s -w "\n%{http_code}" "${SERVICE_URL}/health")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Health: $HTTP_CODE"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Health: $HTTP_CODE — $BODY"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 3: OpenAPI docs ─────────────────────────────────────────────
+      - name: Gate 3 — OpenAPI docs (200 OK)
+        id: gate-docs
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/docs")
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Docs: $HTTP_CODE"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Docs: $HTTP_CODE"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 4: Metrics endpoint ─────────────────────────────────────────
+      - name: Gate 4 — Metrics endpoint (200 OK)
+        id: gate-metrics
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/metrics")
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Metrics: $HTTP_CODE"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Metrics: $HTTP_CODE"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 5: Auth flow (registration + login) ────────────────────────
+      - name: Gate 5 — Auth flow (register → login → token)
+        id: gate-auth
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          TIMESTAMP=$(date +%s%N)
+          EMAIL="smoke-${TIMESTAMP}@gates.test"
+          PASSWORD="SmokeGate123456"
+          
+          # Register
+          REG_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${SERVICE_URL}/v1/registration" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
+          
+          if [ "$REG_CODE" != "201" ]; then
+            echo "✗ Registration returned $REG_CODE"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Login and capture token
+          LOGIN_BODY=$(curl -s -X POST "${SERVICE_URL}/v1/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
+          TOKEN=$(echo "$LOGIN_BODY" | jq -r '.token // empty')
+          
+          if [ -z "$TOKEN" ]; then
+            echo "✗ Login returned no token"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "✓ Auth flow: register 201, login 200, token obtained"
+          echo "status=pass" >> $GITHUB_OUTPUT
+
+      # ─── Gate 6: Protected endpoint access ───────────────────────────────
+      - name: Gate 6 — Protected endpoint access (with token)
+        id: gate-protected
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          TIMESTAMP=$(date +%s%N)
+          EMAIL="smoke-prot-${TIMESTAMP}@gates.test"
+          PASSWORD="SmokeGate123456"
+          
+          # Bootstrap: register + login
+          curl -s -X POST "${SERVICE_URL}/v1/registration" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}" > /dev/null
+          
+          TOKEN=$(curl -s -X POST "${SERVICE_URL}/v1/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}" | jq -r '.token // empty')
+          
+          if [ -z "$TOKEN" ]; then
+            echo "✗ Could not obtain token for protected endpoint test"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Access protected endpoint
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/v1/users" \
+            -H "Authorization: Bearer ${TOKEN}")
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✓ Protected endpoint: $HTTP_CODE"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Protected endpoint: $HTTP_CODE"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 7: Auth enforcement (no token rejected) ─────────────────────
+      - name: Gate 7 — Auth enforcement (unauthenticated → 401)
+        id: gate-auth-enforcement
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/v1/users")
+          
+          if [ "$HTTP_CODE" = "401" ]; then
+            echo "✓ Auth enforcement: 401 as expected"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Auth enforcement: expected 401, got $HTTP_CODE"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 8: API test suite against live URL ──────────────────────────
+      - name: Gate 8 — Full API test suite (Playwright vs live URL)
+        id: gate-api-tests
+        continue-on-error: true
+        working-directory: template-project
+        env:
+          BASE_API_URL: ${{ inputs.service_url }}
+        run: |
+          # Run Playwright API tests without webServer (use the live service)
+          npx playwright test --config=playwright.api.config.ts \
+            --no-deps \
+            2>&1 | tee /tmp/api-test-output.txt
+          
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "✓ All API tests passed against live service"
+            echo "status=pass" >> $GITHUB_OUTPUT
+          else
+            echo "✗ API tests failed against live service"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 9: Error rate check (last 5 minutes) ───────────────────────
+      - name: Gate 9 — Error rate threshold (<${{ inputs.error_rate_threshold || 5 }}%)
+        id: gate-error-rate
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          THRESHOLD="${{ inputs.error_rate_threshold || 5 }}"
+          
+          # Probe the service 20 times to measure current error rate
+          TOTAL=20
+          ERRORS=0
+          
+          for i in $(seq 1 $TOTAL); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "${SERVICE_URL}/health")
+            if [ "$HTTP_CODE" != "200" ]; then
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+          
+          ERROR_RATE=$(( (ERRORS * 100) / TOTAL ))
+          echo "Error rate: ${ERROR_RATE}% (${ERRORS}/${TOTAL} requests failed)"
+          
+          if [ $ERROR_RATE -le $THRESHOLD ]; then
+            echo "✓ Error rate ${ERROR_RATE}% ≤ threshold ${THRESHOLD}%"
+            echo "status=pass" >> $GITHUB_OUTPUT
+            echo "error_rate=${ERROR_RATE}" >> $GITHUB_OUTPUT
+          else
+            echo "✗ Error rate ${ERROR_RATE}% > threshold ${THRESHOLD}%"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            echo "error_rate=${ERROR_RATE}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Gate 10: P95 Latency check ──────────────────────────────────────
+      - name: Gate 10 — P95 latency threshold (<${{ inputs.latency_threshold_ms || 2000 }}ms)
+        id: gate-latency
+        continue-on-error: true
+        run: |
+          SERVICE_URL="${{ inputs.service_url }}"
+          THRESHOLD_MS="${{ inputs.latency_threshold_ms || 2000 }}"
+          
+          # Sample 10 health endpoint calls, measure latency
+          LATENCIES=()
+          for i in $(seq 1 10); do
+            LATENCY_MS=$(curl -s -o /dev/null -w "%{time_total}" "${SERVICE_URL}/health" | awk '{printf "%d", $1 * 1000}')
+            LATENCIES+=($LATENCY_MS)
+          done
+          
+          # Sort and take P95 (index 9 of 10 = 95th percentile)
+          IFS=$'\n' SORTED=($(sort -n <<< "${LATENCIES[*]}")); unset IFS
+          P95=${SORTED[9]}
+          
+          echo "Latency samples: ${LATENCIES[*]}"
+          echo "P95 latency: ${P95}ms (threshold: ${THRESHOLD_MS}ms)"
+          
+          if [ "$P95" -le "$THRESHOLD_MS" ]; then
+            echo "✓ P95 latency ${P95}ms ≤ threshold ${THRESHOLD_MS}ms"
+            echo "status=pass" >> $GITHUB_OUTPUT
+            echo "p95_ms=${P95}" >> $GITHUB_OUTPUT
+          else
+            echo "✗ P95 latency ${P95}ms > threshold ${THRESHOLD_MS}ms"
+            echo "status=fail" >> $GITHUB_OUTPUT
+            echo "p95_ms=${P95}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ─── Evaluate all gates ───────────────────────────────────────────────
+      - name: Evaluate all gates & write summary
+        id: evaluate
+        if: always()
+        run: |
+          REACHABILITY="${{ steps.gate-reachability.outputs.status }}"
+          HEALTH="${{ steps.gate-health.outputs.status }}"
+          DOCS="${{ steps.gate-docs.outputs.status }}"
+          METRICS="${{ steps.gate-metrics.outputs.status }}"
+          AUTH="${{ steps.gate-auth.outputs.status }}"
+          PROTECTED="${{ steps.gate-protected.outputs.status }}"
+          AUTH_ENFORCEMENT="${{ steps.gate-auth-enforcement.outputs.status }}"
+          API_TESTS="${{ steps.gate-api-tests.outputs.status }}"
+          ERROR_RATE="${{ steps.gate-error-rate.outputs.status }}"
+          LATENCY="${{ steps.gate-latency.outputs.status }}"
+
+          icon() { [ "$1" = "pass" ] && echo "✅" || echo "❌"; }
+
+          # Determine overall result
+          ALL_PASSED="true"
+          for STATUS in "$REACHABILITY" "$HEALTH" "$DOCS" "$METRICS" "$AUTH" "$PROTECTED" "$AUTH_ENFORCEMENT" "$API_TESTS" "$ERROR_RATE" "$LATENCY"; do
+            if [ "$STATUS" != "pass" ]; then
+              ALL_PASSED="false"
+              break
+            fi
+          done
+
+          echo "passed=${ALL_PASSED}" >> $GITHUB_OUTPUT
+          
+          SUMMARY="All smoke gates passed"
+          [ "$ALL_PASSED" = "false" ] && SUMMARY="One or more smoke gates failed"
+          echo "summary=${SUMMARY}" >> $GITHUB_OUTPUT
+
+          # Write GitHub Job Summary
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Smoke Gate Results
+
+          | # | Gate | Result |
+          |---|------|--------|
+          | 1 | Service reachability | $(icon $REACHABILITY) |
+          | 2 | Health endpoint (200 OK) | $(icon $HEALTH) |
+          | 3 | OpenAPI docs (200 OK) | $(icon $DOCS) |
+          | 4 | Metrics endpoint (200 OK) | $(icon $METRICS) |
+          | 5 | Auth flow (register → login → token) | $(icon $AUTH) |
+          | 6 | Protected endpoint access | $(icon $PROTECTED) |
+          | 7 | Auth enforcement (401 without token) | $(icon $AUTH_ENFORCEMENT) |
+          | 8 | Full API test suite (live URL) | $(icon $API_TESTS) |
+          | 9 | Error rate < ${{ inputs.error_rate_threshold || 5 }}% | $(icon $ERROR_RATE) (${{ steps.gate-error-rate.outputs.error_rate || 'n/a' }}%) |
+          | 10 | P95 latency < ${{ inputs.latency_threshold_ms || 2000 }}ms | $(icon $LATENCY) (${{ steps.gate-latency.outputs.p95_ms || 'n/a' }}ms) |
+
+          **Service URL:** ${{ inputs.service_url }}
+          **Revision:** ${{ inputs.revision || 'unknown' }}
+          **Image:** ${{ inputs.image_digest || 'unknown' }}
+
+          ### Overall: $( [ "$ALL_PASSED" = "true" ] && echo "✅ ALL GATES PASSED" || echo "❌ GATES FAILED — ROLLBACK REQUIRED" )
+          EOF

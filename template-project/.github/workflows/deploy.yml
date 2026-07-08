@@ -176,195 +176,47 @@ jobs:
           echo "Revision: ${REVISION}"
 
   smoke-tests:
-    name: Smoke Tests
+    name: Smoke Gates
     needs: deploy-to-cloud-run
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: template-project
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: template-project/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Wait for service to be ready
-        run: |
-          MAX_RETRIES=30
-          RETRY_COUNT=0
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES"
-            if curl -f --connect-timeout 5 --max-time 10 "${{ needs.deploy-to-cloud-run.outputs.service_url }}/health"; then
-              echo "✓ Service is healthy"
-              exit 0
-            fi
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "  Retrying in 5 seconds..."
-              sleep 5
-            fi
-          done
-          echo "✗ Service failed to become healthy after $MAX_RETRIES attempts"
-          exit 1
-
-      - name: Test health endpoint
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" "${{ needs.deploy-to-cloud-run.outputs.service_url }}/health")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-          
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✓ Health endpoint returned 200"
-          else
-            echo "✗ Health endpoint returned $HTTP_CODE"
-            echo "Response: $BODY"
-            exit 1
-          fi
-
-      - name: Test OpenAPI docs endpoint
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" "${{ needs.deploy-to-cloud-run.outputs.service_url }}/docs")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✓ OpenAPI docs endpoint returned 200"
-          else
-            echo "✗ OpenAPI docs endpoint returned $HTTP_CODE"
-            exit 1
-          fi
-
-      - name: Test metrics endpoint
-        run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" "${{ needs.deploy-to-cloud-run.outputs.service_url }}/metrics")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✓ Metrics endpoint returned 200"
-          else
-            echo "✗ Metrics endpoint returned $HTTP_CODE"
-            exit 1
-          fi
-
-      - name: Test registration endpoint
-        run: |
-          TIMESTAMP=$(date +%s%N)
-          EMAIL="test-smoke-${TIMESTAMP}@example.com"
-          PASSWORD="SmokeTest123456"
-          
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${{ needs.deploy-to-cloud-run.outputs.service_url }}/v1/registration" \
-            -H "Content-Type: application/json" \
-            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
-          
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n-1)
-          
-          if [ "$HTTP_CODE" = "201" ]; then
-            echo "✓ Registration endpoint returned 201"
-            echo "Response: $BODY"
-          else
-            echo "✗ Registration endpoint returned $HTTP_CODE"
-            echo "Response: $BODY"
-            exit 1
-          fi
-
-      - name: Test authentication flow
-        run: |
-          TIMESTAMP=$(date +%s%N)
-          EMAIL="test-auth-${TIMESTAMP}@example.com"
-          PASSWORD="AuthTest123456"
-          
-          # Register
-          RESPONSE=$(curl -s -X POST \
-            "${{ needs.deploy-to-cloud-run.outputs.service_url }}/v1/registration" \
-            -H "Content-Type: application/json" \
-            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
-          
-          REG_STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
-          
-          # Login
-          LOGIN_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${{ needs.deploy-to-cloud-run.outputs.service_url }}/v1/login" \
-            -H "Content-Type: application/json" \
-            -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASSWORD}\"}")
-          
-          HTTP_CODE=$(echo "$LOGIN_RESPONSE" | tail -n1)
-          BODY=$(echo "$LOGIN_RESPONSE" | head -n-1)
-          
-          if [ "$HTTP_CODE" = "200" ]; then
-            TOKEN=$(echo "$BODY" | jq -r '.token')
-            if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
-              echo "✓ Authentication flow successful"
-              echo "✓ Token obtained: ${TOKEN:0:20}..."
-            else
-              echo "✗ No token in response"
-              exit 1
-            fi
-          else
-            echo "✗ Login endpoint returned $HTTP_CODE"
-            echo "Response: $BODY"
-            exit 1
-          fi
+    uses: ./.github/workflows/smoke-gates.yml
+    with:
+      service_url: ${{ needs.deploy-to-cloud-run.outputs.service_url }}
+      revision: ${{ needs.deploy-to-cloud-run.outputs.revision }}
+      image_digest: ${{ needs.build-and-push.outputs.image_digest }}
+      error_rate_threshold: 5
+      latency_threshold_ms: 2000
 
   deployment-summary:
     name: Deployment Summary
-    needs: [deploy-to-cloud-run, smoke-tests]
+    needs: [build-and-push, deploy-to-cloud-run, smoke-tests]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Generate deployment summary
+      - name: Write deployment summary
         run: |
-          cat > /tmp/deployment_summary.txt <<EOF
-          ## ✅ Deployment Complete
+          SMOKE_RESULT="${{ needs.smoke-tests.result }}"
+          [ "$SMOKE_RESULT" = "success" ] && STATUS="✅ SUCCEEDED" || STATUS="❌ FAILED"
           
-          **Service:** ${{ env.SERVICE_NAME }}
-          **Region:** ${{ env.GCP_REGION }}
-          **Project:** ${{ env.GCP_PROJECT }}
-          
-          **Deployment Details:**
-          - Service URL: ${{ needs.deploy-to-cloud-run.outputs.service_url }}
-          - Revision: ${{ needs.deploy-to-cloud-run.outputs.revision }}
-          - Image Digest: ${{ needs.build-and-push.outputs.image_digest }}
-          - Commit: ${{ github.sha }}
-          - Branch: ${{ github.ref_name }}
-          
-          **Verification:**
-          - ✓ Quality gates passed
-          - ✓ Container built and pushed
-          - ✓ Cloud Run deployment successful
-          - ✓ Smoke tests passed
-          - ✓ Health checks verified
-          
-          **Next Steps:**
-          1. Monitor service at: ${{ needs.deploy-to-cloud-run.outputs.service_url }}
-          2. View logs: \`gcloud run logs read ${{ env.SERVICE_NAME }} --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT }}\`
-          3. To rollback, see rollback runbook (Task 22)
-          EOF
-          cat /tmp/deployment_summary.txt
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Deployment Summary — $STATUS
 
-      - name: Comment on commit
-        if: github.event_name == 'push'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const summary = fs.readFileSync('/tmp/deployment_summary.txt', 'utf8');
-            
-            github.rest.git.createCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              message: `Deploy: ${{ env.SERVICE_NAME }} to Cloud Run\n\nRevision: ${{ needs.deploy-to-cloud-run.outputs.revision }}`,
-              tree: context.payload.head_commit.tree_id,
-              parents: [context.payload.head_commit.id]
-            }).catch(err => console.log('Commit comment skipped'));
+          | Field | Value |
+          |-------|-------|
+          | Service | ${{ env.SERVICE_NAME }} |
+          | Region | ${{ env.GCP_REGION }} |
+          | Project | ${{ env.GCP_PROJECT }} |
+          | Service URL | ${{ needs.deploy-to-cloud-run.outputs.service_url }} |
+          | Revision | ${{ needs.deploy-to-cloud-run.outputs.revision }} |
+          | Image | ${{ needs.build-and-push.outputs.image_digest }} |
+          | Commit | ${{ github.sha }} |
+          | Branch | ${{ github.ref_name }} |
+          | Quality Gates | ${{ needs.quality-gates.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Build & Push | ${{ needs.build-and-push.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Deployment | ${{ needs.deploy-to-cloud-run.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+          | Smoke Gates | ${{ needs.smoke-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+
+          **Smoke gate details are in the Smoke Gates job above.**
+          EOF
 
   rollback-on-failure:
     name: Rollback on Failure

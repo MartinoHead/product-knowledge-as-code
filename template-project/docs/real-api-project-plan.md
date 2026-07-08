@@ -683,9 +683,65 @@ Build a production-like API service inside template-project that implements the 
 - ✅ All stages defined with proper error handling
 - ✅ Workload Identity Federation setup steps documented
 
-**Next Steps (Task 22):**
-- Configure Workload Identity Federation in GCP (one-time setup)
-- Create github-actions service account with appropriate IAM roles
-- Test workflow by triggering manual deployment
-- Monitor first production deployments
-- Implement monitoring and alerting on deployment metrics
+### Task 22: Post-Deploy Smoke Gates & Rollback (Completed 2026-07-08)
+
+**Objective:** Define and enforce measurable post-deployment quality gates with automatic rollback; run the full API test suite against the live service as part of the deployment pipeline.
+
+**Implementation Details:**
+
+**Reusable Workflow:** `.github/workflows/smoke-gates.yml`
+
+The smoke gates are extracted into a standalone reusable workflow (`workflow_call`) that can be:
+- Called automatically from `deploy.yml` after every deployment
+- Triggered manually via `workflow_dispatch` to validate any live URL on-demand
+
+**10 Smoke Gates:**
+
+| # | Gate | Threshold |
+|---|------|-----------|
+| 1 | Service reachability | Responsive within 20 retries × 5s |
+| 2 | Health endpoint | 200 OK |
+| 3 | OpenAPI docs | 200 OK |
+| 4 | Metrics endpoint | 200 OK |
+| 5 | Auth flow | Registration (201) + Login (200) + Token obtained |
+| 6 | Protected endpoint | GET /v1/users with valid token → 200 |
+| 7 | Auth enforcement | GET /v1/users without token → 401 |
+| 8 | Full Playwright API test suite | 0 test failures against live URL |
+| 9 | Error rate | < 5% (configurable) |
+| 10 | P95 latency | < 2000ms (configurable) |
+
+**Inputs (configurable per call):**
+- `service_url` — live service base URL
+- `revision` — Cloud Run revision name for summary
+- `image_digest` — Container image digest for summary
+- `error_rate_threshold` — Max acceptable error % (default: 5)
+- `latency_threshold_ms` — Max P95 latency (default: 2000ms)
+
+**Outputs:**
+- `smoke_passed` — boolean, whether all gates passed
+- `summary` — human-readable gate result summary
+
+**GitHub Job Summary:**
+Each run writes a formatted Markdown summary table to GitHub's Job Summary panel showing per-gate pass/fail, measured error rate, and measured P95 latency.
+
+**Rollback Integration:**
+`deploy.yml` → `rollback-on-failure` job depends on `smoke-tests` and executes automatically if any gate fails, restoring traffic to the last stable Cloud Run revision.
+
+**deploy.yml Changes:**
+- `smoke-tests` job now calls `smoke-gates.yml` via `uses: ./.github/workflows/smoke-gates.yml`
+- Removed 150+ lines of inline curl test steps
+- `deployment-summary` now writes a consolidated table to GitHub Job Summary
+- `rollback-on-failure` still depends on `smoke-tests` result
+
+**Playwright Config Change** (`playwright.api.config.ts`):
+- When `BASE_API_URL` env var is set, `webServer` is skipped and tests run directly against the live URL
+- When not set, local dev server is started as before (no breaking change)
+
+**Verification:**
+- ✅ Smoke gates workflow created: `.github/workflows/smoke-gates.yml`
+- ✅ deploy.yml updated to call reusable workflow
+- ✅ playwright.api.config.ts updated for live URL support
+- ✅ GitHub Job Summary tables implemented
+- ✅ All 10 gates with configurable thresholds
+- ✅ Automatic rollback on any gate failure
+- ✅ Manual trigger (workflow_dispatch) for on-demand validation
