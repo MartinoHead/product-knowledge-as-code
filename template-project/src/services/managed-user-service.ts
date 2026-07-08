@@ -20,10 +20,12 @@ export async function createManagedUser(input: {
   email?: unknown;
   firstName?: unknown;
   lastName?: unknown;
+  phone?: unknown;
 }): Promise<CreateManagedUserResult> {
   const email = normalizeEmail(input.email);
   const firstName = String(input.firstName || '').trim();
   const lastName = String(input.lastName || '').trim();
+  const phone = String(input.phone || '').trim();
 
   if (!EMAIL_PATTERN.test(email) || !firstName || !lastName) {
     return {
@@ -31,6 +33,17 @@ export async function createManagedUser(input: {
       body: {
         error: 'invalid_request',
         message: 'Email, firstName, and lastName are required.',
+      },
+    };
+  }
+
+  // Phone is optional but if provided, must be at least 10 digits
+  if (phone && phone.replace(/\D/g, '').length < 10) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid_request',
+        message: 'Phone number must be at least 10 digits.',
       },
     };
   }
