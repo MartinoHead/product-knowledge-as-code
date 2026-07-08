@@ -14,10 +14,11 @@ RUN npm run build
 
 FROM base AS runtime
 ENV NODE_ENV=production
+ENV PORT=8080
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
+EXPOSE 8080
+CMD ["npm", "start"]
