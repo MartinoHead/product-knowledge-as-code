@@ -139,9 +139,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "product-knowledge-as-code: AI agent — update knowledge and regenerate tests
-
-AI agent analyzed PR diff (${{ steps.diff.outputs.diff_lines }} lines) and updated:
+          git commit -m "product-knowledge-as-code: AI agent — update knowledge and regenerate tests" -m "AI agent analyzed PR diff (${{ steps.diff.outputs.diff_lines }} lines) and updated:
 - Knowledge files (md/yaml/gherkin) for impacted features
 - Generated test scaffolds from updated knowledge
 
