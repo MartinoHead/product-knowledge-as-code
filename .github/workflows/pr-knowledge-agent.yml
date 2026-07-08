@@ -42,7 +42,69 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Precheck scope and bypass controls
+        id: precheck
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          BASE="${{ github.base_ref }}"
+          git fetch origin "${BASE}"
+
+          if git merge-base "origin/${BASE}" HEAD >/dev/null 2>&1; then
+            RANGE="origin/${BASE}...HEAD"
+          else
+            RANGE="origin/${BASE}..HEAD"
+          fi
+
+          mapfile -t CHANGED_FILES < <(git diff --name-only "${RANGE}")
+          CHANGED_COUNT=${#CHANGED_FILES[@]}
+
+          SKIP=false
+          REASON=''
+          MODE='run'
+
+          if echo "${PR_LABELS}" | tr ',' '\n' | grep -Fxq 'skip-knowledge-agent'; then
+            SKIP=true
+            REASON='maintainer label skip-knowledge-agent present'
+            MODE='label-bypass'
+          fi
+
+          if [ "${SKIP}" = false ] && printf '%s\n%s\n' "${PR_TITLE}" "${PR_BODY}" | grep -Eiq '\[skip[ _-]?pkac-agent\]'; then
+            SKIP=true
+            REASON='PR marker [skip pkac-agent] detected'
+            MODE='marker-bypass'
+          fi
+
+          DOCS_ONLY=true
+          if [ ${CHANGED_COUNT} -eq 0 ]; then
+            DOCS_ONLY=false
+          else
+            for FILE in "${CHANGED_FILES[@]}"; do
+              if [[ ! "${FILE}" =~ ^docs/ ]] && [[ ! "${FILE}" =~ ^template-project/docs/ ]]; then
+                DOCS_ONLY=false
+                break
+              fi
+            done
+          fi
+
+          if [ "${SKIP}" = false ] && [ "${DOCS_ONLY}" = true ]; then
+            SKIP=true
+            REASON='docs-only change set'
+            MODE='docs-only-skip'
+          fi
+
+          echo "skip=${SKIP}" >> $GITHUB_OUTPUT
+          echo "skip_reason=${REASON}" >> $GITHUB_OUTPUT
+          echo "mode=${MODE}" >> $GITHUB_OUTPUT
+          echo "docs_only=${DOCS_ONLY}" >> $GITHUB_OUTPUT
+          echo "changed_count=${CHANGED_COUNT}" >> $GITHUB_OUTPUT
+
+          echo "[precheck] mode=${MODE}, skip=${SKIP}, reason=${REASON}, changed=${CHANGED_COUNT}, docs_only=${DOCS_ONLY}"
+
       - name: Setup Node.js
+        if: steps.precheck.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -50,11 +112,13 @@ jobs:
           cache-dependency-path: template-project/package-lock.json
 
       - name: Install dependencies
+        if: steps.precheck.outputs.skip != 'true'
         run: npm ci
 
       # ─── Step 1: Compute the real git diff ─────────────────────────────────
       - name: Compute PR diff (src + prisma only)
         id: diff
+        if: steps.precheck.outputs.skip != 'true'
         run: |
           BASE="${{ github.base_ref }}"
           git fetch origin "${BASE}"
@@ -78,6 +142,7 @@ jobs:
 
       # ─── Step 2: Prepare enriched impact input ─────────────────────────────
       - name: Prepare PR impact input (with diff)
+        if: steps.precheck.outputs.skip != 'true'
         run: |
           node scripts/prepare-pr-impact-input.js \
             --diff /tmp/pr.diff \
@@ -86,6 +151,7 @@ jobs:
       # ─── Step 3: LLM analysis ──────────────────────────────────────────────
       - name: Analyze PR impact via LLM
         id: llm-analysis
+        if: steps.precheck.outputs.skip != 'true'
         env:
           # GitHub Models (free, uses built-in GITHUB_TOKEN — no extra secret needed).
           # Override by setting OPENAI_API_KEY secret + OPENAI_BASE_URL/OPENAI_MODEL vars
@@ -97,6 +163,7 @@ jobs:
 
       # ─── Step 4: Validate LLM output ──────────────────────────────────────
       - name: Validate LLM impact artifact
+        if: steps.precheck.outputs.skip != 'true'
         run: |
           if npm run validate:llm-impact; then
             echo "LLM impact artifact validation passed."
@@ -109,6 +176,7 @@ jobs:
       # ─── Step 5: Apply knowledge updates ──────────────────────────────────
       - name: Apply knowledge updates (apply mode)
         id: apply-knowledge
+        if: steps.precheck.outputs.skip != 'true'
         run: |
           APPLY_LLM_KNOWLEDGE_UPDATES=true npm run apply:knowledge:llm -- --apply
           node scripts/sync-knowledge-triad.js
@@ -121,15 +189,18 @@ jobs:
 
       # ─── Step 6: Verify sync after updates ────────────────────────────────
       - name: Verify knowledge sync
+        if: steps.precheck.outputs.skip != 'true'
         run: npm run verify:sync
 
       # ─── Step 7: Regenerate tests from updated knowledge ──────────────────
       - name: Generate tests from knowledge
+        if: steps.precheck.outputs.skip != 'true'
         run: npm run generate:tests
 
       # ─── Step 8: Check if anything actually changed ────────────────────────
       - name: Detect changes to commit
         id: changes
+        if: steps.precheck.outputs.skip != 'true'
         run: |
           git add knowledge/ tests/
 
@@ -149,7 +220,7 @@ jobs:
 
       # ─── Step 9: Commit changes back to PR branch ─────────────────────────
       - name: Commit knowledge + test updates to PR branch
-        if: steps.changes.outputs.has_changes == 'true'
+        if: steps.precheck.outputs.skip != 'true' && steps.changes.outputs.has_changes == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -164,6 +235,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const precheckSkipped = '${{ steps.precheck.outputs.skip }}' === 'true';
+            const skipReason = '${{ steps.precheck.outputs.skip_reason }}';
+            const skipMode = '${{ steps.precheck.outputs.mode }}';
+            const docsOnly = '${{ steps.precheck.outputs.docs_only }}' === 'true';
+            const changedCount = '${{ steps.precheck.outputs.changed_count }}';
             const hasChanges = '${{ steps.changes.outputs.has_changes }}' === 'true';
             const diffLines = '${{ steps.diff.outputs.diff_lines }}';
             const changedFiles = `${{ steps.apply-knowledge.outputs.changed_files }}`.trim();
@@ -171,38 +247,60 @@ jobs:
             const llmResult = '${{ steps.llm-analysis.outcome }}';
             const applyResult = '${{ steps.apply-knowledge.outcome }}';
 
-            const statusIcon = hasChanges ? '🤖' : '✅';
-            const statusTitle = hasChanges
-              ? 'AI Knowledge Agent — Knowledge Updated'
-              : 'AI Knowledge Agent — No Updates Needed';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let statusIcon;
+            let statusTitle;
+            if (precheckSkipped) {
+              statusIcon = '⏭️';
+              statusTitle = 'AI Knowledge Agent — Skipped';
+            } else if (hasChanges) {
+              statusIcon = '🤖';
+              statusTitle = 'AI Knowledge Agent — Knowledge Updated';
+            } else {
+              statusIcon = '✅';
+              statusTitle = 'AI Knowledge Agent — No Updates Needed';
+            }
 
             let body = `## ${statusIcon} ${statusTitle}\n\n`;
-            body += `**PR diff analysed:** ${diffLines} lines\n\n`;
+            body += `**Workflow run:** [View run](${runUrl})\n\n`;
 
-            if (hasChanges) {
-              body += `### Changes Committed\n\n`;
-              body += `The agent updated the following knowledge files and regenerated tests:\n\n`;
-              if (changedFiles) {
-                const files = changedFiles.split('\n').filter(Boolean);
-                body += files.map(f => `- \`${f}\``).join('\n') + '\n\n';
-              }
-              if (changeSummary) {
-                body += `\`\`\`\n${changeSummary}\n\`\`\`\n\n`;
-              }
-              body += `> **Review these changes** before approving the PR. `;
-              body += `The knowledge files reflect the AI's interpretation of the code changes.\n\n`;
+            if (precheckSkipped) {
+              body += `### Skip Summary\n\n`;
+              body += `- Mode: \`${skipMode || 'unknown'}\`\n`;
+              body += `- Reason: ${skipReason || 'not provided'}\n`;
+              body += `- Changed files in PR: ${changedCount || '0'}\n`;
+              body += `- Docs only: ${docsOnly ? 'yes' : 'no'}\n\n`;
+              body += `No knowledge/test update steps were executed for this run.\n\n`;
             } else {
-              body += `Knowledge files and tests are already aligned with the code changes. No updates were needed.\n\n`;
+              body += `**PR diff analysed:** ${diffLines} lines\n\n`;
+
+              if (hasChanges) {
+                body += `### Changes Committed\n\n`;
+                body += `The agent updated the following knowledge files and regenerated tests:\n\n`;
+                if (changedFiles) {
+                  const files = changedFiles.split('\n').filter(Boolean);
+                  body += files.map(f => `- \`${f}\``).join('\n') + '\n\n';
+                }
+                if (changeSummary) {
+                  body += `\`\`\`\n${changeSummary}\n\`\`\`\n\n`;
+                }
+                body += `> **Review these changes** before approving the PR. `;
+                body += `The knowledge files reflect the AI's interpretation of the code changes.\n\n`;
+              } else {
+                body += `Knowledge files and tests are already aligned with the code changes. No updates were needed.\n\n`;
+              }
             }
 
             body += `### Pipeline\n\n`;
             body += `| Step | Status |\n|------|--------|\n`;
-            body += `| Diff computed | ✅ |\n`;
-            body += `| LLM analysis | ${llmResult === 'success' ? '✅' : '⚠️ fallback used'} |\n`;
-            body += `| Knowledge validated | ✅ |\n`;
-            body += `| Updates applied | ${applyResult === 'success' ? '✅' : '❌'} |\n`;
-            body += `| Tests regenerated | ✅ |\n`;
-            body += `| Changes committed | ${hasChanges ? '✅' : '— (nothing to commit)'} |\n`;
+            body += `| Precheck | ${precheckSkipped ? `⏭️ skipped (${skipMode || 'policy'})` : '✅'} |\n`;
+            body += `| Diff computed | ${precheckSkipped ? '⏭️' : '✅'} |\n`;
+            body += `| LLM analysis | ${precheckSkipped ? '⏭️' : (llmResult === 'success' ? '✅' : '⚠️ fallback used')} |\n`;
+            body += `| Knowledge validated | ${precheckSkipped ? '⏭️' : '✅'} |\n`;
+            body += `| Updates applied | ${precheckSkipped ? '⏭️' : (applyResult === 'success' ? '✅' : '❌')} |\n`;
+            body += `| Tests regenerated | ${precheckSkipped ? '⏭️' : '✅'} |\n`;
+            body += `| Changes committed | ${precheckSkipped ? '⏭️' : (hasChanges ? '✅' : '— (nothing to commit)')} |\n`;
 
             body += `\n---\n_This comment is generated automatically by the [PR Knowledge Agent](.github/workflows/pr-knowledge-agent.yml)._`;
 
