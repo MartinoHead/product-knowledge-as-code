@@ -37,6 +37,17 @@ export async function createManagedUser(input: {
     };
   }
 
+  // Phone is optional but if provided, must be at least 10 digits
+  if (phone && phone.replace(/\D/g, '').length < 10) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid_request',
+        message: 'Phone number must be at least 10 digits.',
+      },
+    };
+  }
+
   const user = await createManagedUserRecord({
     email,
     firstName,
