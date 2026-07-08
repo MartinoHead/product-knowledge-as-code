@@ -277,6 +277,80 @@ Build a production-like API service inside template-project that implements the 
 - Acceptance criteria:
   - Stage transitions are controlled, documented, and reversible.
 
+### Phase 7: Google Cloud Deployment (Planned)
+
+#### Task 7.1: Provision Google Cloud project and runtime identities
+- Objective: establish a secure cloud foundation for deployment.
+- Detailed work:
+  - Create/select Google Cloud project and enable required APIs (Cloud Run, Artifact Registry, Cloud Build, Secret Manager).
+  - Create least-privileged service account for runtime.
+  - Grant scoped IAM roles for deploy and runtime access.
+- Deliverables:
+  - Project setup checklist and validated IAM bindings.
+- Acceptance criteria:
+  - Deployment account can deploy Cloud Run service.
+  - Runtime account has only required permissions.
+
+#### Task 7.2: Provision managed PostgreSQL and connectivity
+- Objective: replace local database dependency with managed production-like persistence.
+- Detailed work:
+  - Provision PostgreSQL (Cloud SQL or equivalent managed provider).
+  - Configure secure connectivity from Cloud Run to database.
+  - Create environment-specific database and least-privileged app user.
+- Deliverables:
+  - Reachable DATABASE_URL (or connector configuration) for Cloud Run.
+- Acceptance criteria:
+  - Prisma migrations and seed run successfully against managed database.
+  - API can read/write without local fallback dependencies.
+
+#### Task 7.3: Configure production secrets and environment
+- Objective: externalize sensitive runtime configuration and enforce secure defaults.
+- Detailed work:
+  - Store JWT secret and other sensitive values in Secret Manager.
+  - Set non-secret runtime vars (API version, metrics flag, CORS origins, rate limits).
+  - Wire Cloud Run service to mounted/injected secrets and env vars.
+- Deliverables:
+  - Secret and env variable mapping for production service.
+- Acceptance criteria:
+  - Service starts without inline secrets.
+  - Sensitive values are rotated without code changes.
+
+#### Task 7.4: Build and deploy container to Cloud Run
+- Objective: run the API on a public HTTPS endpoint accessible globally.
+- Detailed work:
+  - Build container image from repository Dockerfile.
+  - Push image to Artifact Registry and deploy Cloud Run revision.
+  - Configure region, concurrency, min/max instances, and ingress policy.
+- Deliverables:
+  - Public Cloud Run service URL.
+- Acceptance criteria:
+  - GET /, GET /v1/health, GET /openapi.json, and GET /docs are reachable from public internet.
+  - Base write flows (registration/login) succeed on deployed environment.
+
+#### Task 7.5: Add deployment automation via GitHub Actions
+- Objective: make deployments repeatable and auditable from CI.
+- Detailed work:
+  - Add workflow for build/push/deploy to Cloud Run on protected trigger.
+  - Use workload identity federation or service account auth without long-lived keys.
+  - Add deployment summary with revision, image digest, and endpoint URL.
+- Deliverables:
+  - Deployment workflow file and required repo/environment settings.
+- Acceptance criteria:
+  - Deployment can be triggered from GitHub Actions with no manual image push steps.
+  - Failed deploys surface actionable diagnostics in workflow logs.
+
+#### Task 7.6: Post-deploy smoke gates and rollback runbook
+- Objective: ensure safe promotion and recovery for cloud releases.
+- Detailed work:
+  - Add smoke checks for health/docs/openapi and a representative authenticated flow.
+  - Define rollback steps to prior stable Cloud Run revision.
+  - Capture operational checks (metrics, logs, error rate threshold).
+- Deliverables:
+  - Post-deploy verification steps integrated into deployment workflow and runbook.
+- Acceptance criteria:
+  - Release is marked successful only if smoke checks pass.
+  - Rollback to previous revision can be executed in under 10 minutes.
+
 ## Cross-Cutting Standards
 - API response format should be consistent across all endpoints.
 - Error codes and messages should be deterministic and documented.
@@ -353,6 +427,12 @@ Build a production-like API service inside template-project that implements the 
 14. Add validator + guarded knowledge apply step with deterministic fallback. (Completed 2026-06-17)
 15. Update GitHub workflows for analyze-only model path, then staged apply mode. (Completed 2026-06-17)
 16. Expand Swagger/OpenAPI documentation coverage and upkeep process for all current API behavior. (Completed 2026-06-17)
+17. Provision Google Cloud project, IAM identities, and required service APIs. (Completed 2026-07-08)
+18. Provision managed PostgreSQL and wire secure connectivity for runtime. (Completed 2026-07-08)
+19. Configure production secrets and environment mappings for Cloud Run. (Planned 2026-07-08)
+20. Deploy containerized API to Cloud Run and validate public endpoint reachability. (Planned 2026-07-08)
+21. Add GitHub Actions deployment automation for Cloud Run. (Planned 2026-07-08)
+22. Add post-deploy smoke gates and rollback runbook steps. (Planned 2026-07-08)
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.
@@ -442,3 +522,17 @@ Build a production-like API service inside template-project that implements the 
 - Added `generate:openapi` and `verify:openapi` npm scripts.
 - Added OpenAPI drift gate to `quality.yml` CI workflow.
 - Generated initial `docs/openapi.json` snapshot.
+- 2026-06-18: Planned Phase 7 Google Cloud deployment rollout tasks (Tasks 17-22).
+- Added execution-order cloud tasks for project/IAM setup, managed PostgreSQL, secrets, Cloud Run deployment, CI automation, and rollback-safe smoke gates.
+- 2026-07-08: Completed Task 17 Google Cloud project and IAM setup.
+- Project `project-08401bb0-e467-491a-ac0` already accessible in org.
+- Enabled 5 required APIs: Cloud Run, Artifact Registry, Cloud Build, Secret Manager, Cloud SQL.
+- Created service accounts: `template-project-runtime` and `template-project-deployer`.
+- Granted IAM roles: deployer has `run.admin`, `artifactregistry.writer`, `iam.serviceAccountUser`; runtime has `secretmanager.secretAccessor`, `cloudsql.client`.
+- All IAM bindings verified in project policy.
+- 2026-07-08: Completed Task 18 managed PostgreSQL provisioning.
+- Provisioned Cloud SQL PostgreSQL 16 instance `template-project-db` (db-c4a-highmem-2 tier, ENTERPRISE_PLUS edition compatible).
+- Instance location: `us-central1-f`, public IP: `35.225.201.212`.
+- Created database `template_app` and app user `template_app`.
+- Generated secure password and stored in Secret Manager secret `template-app-db-password`.
+- Verified connectivity via: `postgresql://template_app:PASSWORD@35.225.201.212:5432/template_app`.
