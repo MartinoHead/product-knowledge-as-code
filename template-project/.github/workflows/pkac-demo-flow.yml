@@ -1,7 +1,6 @@
 name: pkac-demo-flow
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       flow_mode:
