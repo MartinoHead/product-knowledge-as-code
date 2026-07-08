@@ -10,6 +10,7 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+RUN npx prisma generate
 RUN npm run build
 
 FROM base AS runtime
