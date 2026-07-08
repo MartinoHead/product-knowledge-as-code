@@ -548,3 +548,47 @@ Build a production-like API service inside template-project that implements the 
 - Public service URL: `https://template-project-w5qrllc24a-uc.a.run.app`
 - Validated API: POST /v1/registration endpoint responding with 201 (verified with test user registration).
 - OpenAPI docs and metrics endpoints confirmed accessible.
+
+## Additional Features (Post-Deployment)
+
+### Feature: List Managed Users Endpoint (Completed 2026-07-08)
+**Objective:** Add a new `GET /v1/users` endpoint to list all managed users in the system.
+
+**Implementation Details:**
+- **Endpoint:** `GET /v1/users`
+- **Authentication:** Required (Bearer token in Authorization header)
+- **Response:** 
+  - 200 OK: `{ "users": [ { "userId": "usr_1", "email": "...", "firstName": "...", "lastName": "..." }, ... ] }`
+  - 401 Unauthorized: Missing or invalid token
+  - 404 Not Found: If endpoint not found
+
+**Code Changes:**
+- Added `listManagedUsers()` function to `src/data/in-memory-auth-store.ts` - retrieves all managed users from in-memory store
+- Added `listManagedUsers()` repository function to `src/repositories/identity-repository.ts` - fetches from PostgreSQL with fallback to in-memory
+- Added `listManagedUsers()` service function to `src/services/managed-user-service.ts` - returns list with proper response wrapper
+- Added `GET /users` handler in `src/routes/users.ts` - requires auth and returns user list
+- Imported `listManagedUsers` in users router
+
+**Test Coverage:**
+- **API Tests:** 6 test cases in `tests/api/list-users.api.spec.ts`
+  - [LISTUSR-001] Requires authorization (401 without token)
+  - [LISTUSR-002] Returns empty array when no users exist
+  - [LISTUSR-003] Returns all created managed users
+  - [LISTUSR-004] Includes required fields (userId, email, firstName, lastName)
+  - [LISTUSR-005] Returns users in creation order
+  - [LISTUSR-006] Rejects invalid tokens (401)
+  
+- **Playwright/UI Tests:** 6 test cases in `tests/playwright/list-users.spec.ts`
+  - [LISTUSR-UI-001] Unauthenticated access blocked
+  - [LISTUSR-UI-002] Authenticated user can access endpoint
+  - [LISTUSR-UI-003] Managed users appear in list after creation
+  - [LISTUSR-UI-004] List includes all user properties in correct format
+  - [LISTUSR-UI-005] Different authenticated users see the same list
+  - [LISTUSR-UI-006] Returns 200 status code and valid JSON response
+
+**Verification:**
+- TypeScript compilation: ✅ Passed (no type errors)
+- Router implementation: ✅ Verified in src/routes/users.ts
+- Service layer: ✅ Implemented with proper error handling and response types
+- Database support: ✅ Works with both PostgreSQL and in-memory fallback
+- Tests: ✅ 12 comprehensive test cases (6 API + 6 UI) ready for execution

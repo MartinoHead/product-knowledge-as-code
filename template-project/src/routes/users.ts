@@ -5,6 +5,7 @@ import { requireObjectBody } from '../middleware/validation.js';
 import {
   createManagedUser,
   getManagedUserById,
+  listManagedUsers,
 } from '../services/managed-user-service.js';
 
 type CreateUserRequest = {
@@ -14,6 +15,11 @@ type CreateUserRequest = {
 };
 
 export const usersRouter = Router();
+
+usersRouter.get('/users', requireAuth, asyncHandler(async (req, res) => {
+  const result = await listManagedUsers();
+  res.status(result.status).json(result.body);
+}));
 
 usersRouter.post('/users', requireAuth, requireObjectBody, asyncHandler(async (req, res) => {
   const result = await createManagedUser((req.body || {}) as CreateUserRequest);

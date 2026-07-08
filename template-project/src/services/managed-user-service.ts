@@ -2,6 +2,7 @@ import { EMAIL_PATTERN, normalizeEmail, type ManagedUser } from '../data/in-memo
 import {
   createManagedUser as createManagedUserRecord,
   findManagedUserById as findManagedUserRecordById,
+  listManagedUsers as listManagedUsersRecord,
 } from '../repositories/identity-repository.js';
 
 type CreateManagedUserResult =
@@ -12,6 +13,8 @@ type CreateManagedUserResult =
 type GetManagedUserResult =
   | { status: 200; body: ManagedUser }
   | { status: 404; body: { error: 'not_found'; message: string } };
+
+type ListManagedUsersResult = { status: 200; body: { users: ManagedUser[] } };
 
 export async function createManagedUser(input: {
   email?: unknown;
@@ -72,5 +75,13 @@ export async function getManagedUserById(userId: string): Promise<GetManagedUser
   return {
     status: 200,
     body: user,
+  };
+}
+
+export async function listManagedUsers(): Promise<ListManagedUsersResult> {
+  const users = await listManagedUsersRecord();
+  return {
+    status: 200,
+    body: { users },
   };
 }

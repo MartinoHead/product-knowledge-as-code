@@ -77,6 +77,10 @@ export function findManagedUserById(userId: string): ManagedUser | undefined {
   return managedUsersById.get(userId);
 }
 
+export function listManagedUsers(): ManagedUser[] {
+  return Array.from(managedUsersById.values());
+}
+
 export function extractBearerToken(authorizationHeader: unknown): string | null {
   const value = String(authorizationHeader || '').trim();
   const match = value.match(/^Bearer\s+(.+)$/i);

@@ -5,6 +5,7 @@ import {
   createUser as createUserInMemory,
   findManagedUserById as findManagedUserByIdInMemory,
   findUserByEmail as findUserByEmailInMemory,
+  listManagedUsers as listManagedUsersInMemory,
   type AuthUser,
   type ManagedUser,
 } from '../data/in-memory-auth-store.js';
@@ -216,6 +217,27 @@ export async function findManagedUserById(userId: string): Promise<ManagedUser |
   } catch (error) {
     if (isPrismaConnectionError(error)) {
       return findManagedUserByIdInMemory(userId);
+    }
+    throw error;
+  }
+}
+
+export async function listManagedUsers(): Promise<ManagedUser[]> {
+  const prisma = getPrismaClientIfConfigured();
+
+  if (!prisma) {
+    return listManagedUsersInMemory();
+  }
+
+  try {
+    const rows = await prisma.$queryRawUnsafe<ManagedUserRow[]>(
+      'SELECT "publicId", email, "firstName", "lastName" FROM "ManagedUser" ORDER BY "createdAt" ASC',
+    );
+
+    return rows.map(mapManagedUser);
+  } catch (error) {
+    if (isPrismaConnectionError(error)) {
+      return listManagedUsersInMemory();
     }
     throw error;
   }
