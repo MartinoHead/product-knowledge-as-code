@@ -28,3 +28,5 @@ Input: mock-pr-diff.txt
 2. Regenerate tests from knowledge.
 3. Run execution workflow and review results.
 4. Feed failures back into knowledge rules.
+
+<!-- skip-label-trigger 2026-07-09 00:29:13 -->
