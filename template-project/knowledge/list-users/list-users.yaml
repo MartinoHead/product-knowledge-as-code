@@ -1,0 +1,46 @@
+feature: List Users
+intent: Allow authorized clients to retrieve a complete list of all managed users in the system.
+rules:
+  - id: LISTUSR-001
+    title: List users requires authorization.
+    description: Unauthenticated requests to GET /v1/users must return 401 Unauthorized.
+    acceptance_criteria:
+      - Request without authorization header returns 401
+      - Response includes error code "missing_auth"
+  - id: LISTUSR-002
+    title: List users returns empty array when no users exist.
+    description: When no managed users have been created, the endpoint returns an empty users array.
+    acceptance_criteria:
+      - Response status is 200 OK
+      - Response body contains "users" array
+      - Array length is 0 or can be empty
+  - id: LISTUSR-003
+    title: List users returns all created managed users.
+    description: All managed users in the system are returned in the list.
+    acceptance_criteria:
+      - Each created managed user appears in the response
+      - Response includes all user details
+      - No users are filtered or hidden
+  - id: LISTUSR-004
+    title: List users includes userId, email, firstName, and lastName fields.
+    description: Each user object in the list contains the required fields with correct data types.
+    acceptance_criteria:
+      - Each user has userId (string)
+      - Each user has email (string)
+      - Each user has firstName (string)
+      - Each user has lastName (string)
+      - No additional fields are returned
+  - id: LISTUSR-005
+    title: List users returns users in creation order.
+    description: Users are returned in ascending creation order (oldest first).
+    acceptance_criteria:
+      - Users are sorted by creation timestamp ascending
+      - First user in list was created before second user
+      - Order is consistent across requests
+  - id: LISTUSR-006
+    title: Invalid token returns unauthorized response.
+    description: Requests with invalid or malformed tokens return 401 Unauthorized.
+    acceptance_criteria:
+      - Invalid token is rejected
+      - Response status is 401
+      - Response includes error code "invalid_token"

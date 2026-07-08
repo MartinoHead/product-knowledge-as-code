@@ -592,3 +592,100 @@ Build a production-like API service inside template-project that implements the 
 - Service layer: ✅ Implemented with proper error handling and response types
 - Database support: ✅ Works with both PostgreSQL and in-memory fallback
 - Tests: ✅ 12 comprehensive test cases (6 API + 6 UI) ready for execution
+
+### Task 21: GitHub Actions Deployment Automation (Completed 2026-07-08)
+
+**Objective:** Create a GitHub Actions workflow that automates deployment to Cloud Run on every merge to main branch.
+
+**Implementation Details:**
+
+**Workflow File:** `.github/workflows/deploy.yml`
+
+**Trigger Events:**
+- Push to main branch with changes in template-project/**
+- Manual trigger via workflow_dispatch (GitHub Actions UI)
+
+**Pipeline Stages:**
+
+1. **Quality Gates** (Blocks deployment on failure)
+   - Lint check (ESLint)
+   - TypeScript compilation
+   - Knowledge sync verification
+   - API test execution
+   - Status: Failure prevents deployment
+
+2. **Build & Push Container**
+   - Docker build with multi-stage Dockerfile
+   - Push to Artifact Registry (us-central1-docker.pkg.dev)
+   - Generate image digest and tag with commit SHA
+
+3. **Deploy to Cloud Run**
+   - Deploy image to Cloud Run service (template-project)
+   - Inject secrets: DATABASE_PASSWORD, JWT_SECRET from Secret Manager
+   - Set environment variables: NODE_ENV=production, LOG_LEVEL=info, etc.
+   - Record service URL and revision
+
+4. **Smoke Tests** (Automated post-deployment verification)
+   - Health endpoint check (/health → 200)
+   - OpenAPI docs endpoint (/docs → 200)
+   - Metrics endpoint (/metrics → 200)
+   - Registration flow test (POST /v1/registration)
+   - Authentication flow test (register → login → token validation)
+   - Status: Failure triggers automatic rollback
+
+5. **Automatic Rollback** (If smoke tests fail)
+   - Identifies previous stable revision
+   - Routes 100% traffic back to previous revision
+   - Verifies rollback success with health checks
+
+6. **Deployment Summary**
+   - Generates deployment report
+   - Logs service URL, revision, image digest
+   - Provides next steps and troubleshooting links
+
+**Authentication:**
+- Uses Workload Identity Federation (OIDC) for secure, keyless auth
+- No credentials stored in GitHub; tokens generated from OIDC provider
+- Service account: github-actions@project-08401bb0-e467-491a-ac0.iam.gserviceaccount.com
+
+**Capabilities:**
+- Automatic deployment on main branch merge
+- Manual deployment via GitHub Actions UI
+- Quality gates prevent bad code from reaching production
+- Smoke tests verify deployment before marking as complete
+- Automatic rollback on failure prevents prolonged outages
+- Full deployment audit trail in GitHub Actions logs
+
+**Documentation:**
+- Setup guide: `docs/github-actions-setup.md`
+  - Workload Identity Federation configuration steps
+  - IAM role assignments
+  - Troubleshooting guide
+  - Security best practices
+
+- Rollback runbook: `docs/cloud-run-rollback-runbook.md`
+  - Three rollback procedures (immediate, canary, full)
+  - Verification checklist
+  - Decision tree for choosing rollback method
+  - Post-rollback investigation guide
+  - Emergency contact procedures
+
+- API flow test script: `scripts/test-api-flow.sh`
+  - Tests complete auth flow and user management
+  - Executable script for manual verification
+  - Can be run locally or in deployment verification
+
+**Verification:**
+- ✅ Workflow file created and committed: `.github/workflows/deploy.yml`
+- ✅ Setup documentation complete: `docs/github-actions-setup.md`
+- ✅ Rollback runbook complete: `docs/cloud-run-rollback-runbook.md`
+- ✅ Test scripts created: `scripts/test-api-flow.sh`
+- ✅ All stages defined with proper error handling
+- ✅ Workload Identity Federation setup steps documented
+
+**Next Steps (Task 22):**
+- Configure Workload Identity Federation in GCP (one-time setup)
+- Create github-actions service account with appropriate IAM roles
+- Test workflow by triggering manual deployment
+- Monitor first production deployments
+- Implement monitoring and alerting on deployment metrics
