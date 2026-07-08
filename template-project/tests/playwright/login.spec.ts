@@ -17,3 +17,8 @@ test('[LGN-003] Successful login returns an active session token.', async ({ pag
   // TODO: implement scenario for LGN-003.
   // Use resilient locators and deterministic assertions.
 });
+
+test('[LOG-001] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: M src/auth/registration-service.ts.', async ({ page }) => {
+  // TODO: implement scenario for LOG-001.
+  // Use resilient locators and deterministic assertions.
+});

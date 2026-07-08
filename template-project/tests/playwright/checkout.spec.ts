@@ -22,3 +22,8 @@ test('[CHK-004] Confirmation page includes order reference.', async ({ page }) =
   // TODO: implement scenario for CHK-004.
   // Use resilient locators and deterministic assertions.
 });
+
+test('[CHK-005] Document behavior change inferred from PR impact for checkout. Source signal: keyword "checkout" matched: M src/payments/checkout-orchestrator.ts.', async ({ page }) => {
+  // TODO: implement scenario for CHK-005.
+  // Use resilient locators and deterministic assertions.
+});

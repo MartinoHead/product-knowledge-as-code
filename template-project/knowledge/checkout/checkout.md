@@ -34,3 +34,4 @@ Enable users to complete purchases with clear validation and payment confirmatio
 - impact: checkout
 - keyword "checkout" matched: M src/payments/checkout-orchestrator.ts
 <!-- AGENT-LAST-UPDATE:END -->
+- CHK-005: Document behavior change inferred from PR impact for checkout. Source signal: keyword "checkout" matched: M src/payments/checkout-orchestrator.ts.

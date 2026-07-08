@@ -22,3 +22,8 @@ test('[CHK-004] API Confirmation page includes order reference.', async ({ reque
   // TODO: implement API scenario for CHK-004.
   // Example: await request.post('/v1/...', { data: {...} });
 });
+
+test('[CHK-005] API Document behavior change inferred from PR impact for checkout. Source signal: keyword "checkout" matched: M src/payments/checkout-orchestrator.ts.', async ({ request }) => {
+  // TODO: implement API scenario for CHK-005.
+  // Example: await request.post('/v1/...', { data: {...} });
+});

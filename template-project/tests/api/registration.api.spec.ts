@@ -22,3 +22,8 @@ test('[REG-004] API Verification email is sent after successful registration.', 
   // TODO: implement API scenario for REG-004.
   // Example: await request.post('/v1/...', { data: {...} });
 });
+
+test('[REG-005] API Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: M src/auth/registration-service.ts.', async ({ request }) => {
+  // TODO: implement API scenario for REG-005.
+  // Example: await request.post('/v1/...', { data: {...} });
+});

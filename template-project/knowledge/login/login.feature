@@ -18,3 +18,9 @@ Feature: Login
     Given rule LGN-003 preconditions are satisfied
     When the actor executes login
     Then system behavior matches the rule statement
+
+  @LOG-001
+  Scenario: Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: M src/auth/registration-service.ts.
+    Given rule LOG-001 preconditions are satisfied
+    When the actor executes login
+    Then system behavior matches the rule statement

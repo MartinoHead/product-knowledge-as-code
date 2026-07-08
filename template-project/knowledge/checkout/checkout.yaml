@@ -9,3 +9,5 @@ rules:
     title: Payment authorization is required before order creation.
   - id: CHK-004
     title: Confirmation page includes order reference.
+  - id: CHK-005
+    title: Document behavior change inferred from PR impact for checkout. Source signal: keyword "checkout" matched: M src/payments/checkout-orchestrator.ts.

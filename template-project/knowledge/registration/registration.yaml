@@ -9,3 +9,5 @@ rules:
     title: Password length must be at least 10 characters.
   - id: REG-004
     title: Verification email is sent after successful registration.
+  - id: REG-005
+    title: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: M src/auth/registration-service.ts.

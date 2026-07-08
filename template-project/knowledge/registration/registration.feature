@@ -24,3 +24,9 @@ Feature: Registration
     Given rule REG-004 preconditions are satisfied
     When the actor executes registration
     Then system behavior matches the rule statement
+
+  @REG-005
+  Scenario: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: M src/auth/registration-service.ts.
+    Given rule REG-005 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement
