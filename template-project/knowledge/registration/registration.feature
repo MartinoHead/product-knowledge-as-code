@@ -1,26 +1,26 @@
 Feature: Registration
-  Product behavior for account creation and validation.
+  Product behavior for registration.
 
   @REG-001
   Scenario: Email must be valid format.
-    Given a user is on the registration page
-    When the user enters an invalid email format
-    Then registration is blocked
+    Given rule REG-001 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement
 
   @REG-002
   Scenario: Email must be unique.
-    Given an existing account uses the submitted email
-    When the user submits registration
-    Then a duplicate email error is shown
+    Given rule REG-002 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement
 
   @REG-003
   Scenario: Password length must be at least 10 characters.
-    Given a user enters a password shorter than 10 characters
-    When the user submits registration
-    Then a password validation error is shown
+    Given rule REG-003 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement
 
   @REG-004
   Scenario: Verification email is sent after successful registration.
-    Given a user submits valid unique registration credentials
-    When registration succeeds
-    Then a verification email is queued
+    Given rule REG-004 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement

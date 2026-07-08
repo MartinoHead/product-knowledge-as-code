@@ -1,20 +1,20 @@
 Feature: Login
-  Product behavior for user authentication.
+  Product behavior for login.
 
   @LGN-001
   Scenario: Login requires registered email.
-    Given a user email does not exist
-    When login is submitted
-    Then invalid credentials are returned
+    Given rule LGN-001 preconditions are satisfied
+    When the actor executes login
+    Then system behavior matches the rule statement
 
   @LGN-002
   Scenario: Login requires correct password for the registered email.
-    Given a registered user enters a wrong password
-    When login is submitted
-    Then invalid credentials are returned
+    Given rule LGN-002 preconditions are satisfied
+    When the actor executes login
+    Then system behavior matches the rule statement
 
   @LGN-003
   Scenario: Successful login returns an active session token.
-    Given a registered user enters valid credentials
-    When login is submitted
-    Then an active session token is returned
+    Given rule LGN-003 preconditions are satisfied
+    When the actor executes login
+    Then system behavior matches the rule statement

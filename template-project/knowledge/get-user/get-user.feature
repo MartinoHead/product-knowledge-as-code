@@ -1,20 +1,20 @@
 Feature: Get User
-  Product behavior for fetching user details.
+  Product behavior for get user.
 
   @USG-001
   Scenario: Get user requires authorization.
-    Given a request without authorization token
-    When get user is submitted
-    Then unauthorized response is returned
+    Given rule USG-001 preconditions are satisfied
+    When the actor executes get user
+    Then system behavior matches the rule statement
 
   @USG-002
   Scenario: Get user requires existing user identifier.
-    Given an authorized request with unknown user identifier
-    When get user is submitted
-    Then not found response is returned
+    Given rule USG-002 preconditions are satisfied
+    When the actor executes get user
+    Then system behavior matches the rule statement
 
   @USG-003
   Scenario: Successful get user returns user details payload.
-    Given an authorized request with existing user identifier
-    When get user is submitted
-    Then response includes user details payload
+    Given rule USG-003 preconditions are satisfied
+    When the actor executes get user
+    Then system behavior matches the rule statement
