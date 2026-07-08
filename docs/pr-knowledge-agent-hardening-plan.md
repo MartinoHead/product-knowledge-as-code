@@ -22,6 +22,8 @@ Observed behavior:
 2. A follow-up run can be marked action_required due to approval policy.
 3. Mechanism now applies updates and syncs knowledge triad.
 4. A quality regression exists: gherkin scenario steps can be replaced with generic placeholder steps.
+5. Manual run support is available via workflow_dispatch.
+6. Precheck-based skip controls are available (label, marker, docs-only).
 
 Key files involved:
 1. .github/workflows/pr-knowledge-agent.yml
@@ -227,7 +229,7 @@ Planned fix: Implement Phase E and Phase F for stage-level PR narratives and str
 
 ### Issue 004
 Type: Efficiency/Developer Experience
-Status: Open
+Status: Implemented, monitoring
 Description: Agent checks should not run for docs-only changes and should support explicit bypass controls.
 Impact: Unnecessary workflow runs, slower PR feedback, and noisy checks.
 Planned fix: Implement Phase G selective triggering and auditable bypass mechanism.

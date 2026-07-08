@@ -16,6 +16,16 @@ That means engineers spend less time manually updating many test files and more 
 ## Core Idea In One Sentence
 When a PR changes code, an automated workflow analyzes the diff, updates impacted knowledge, regenerates tests, and commits those updates back to the PR branch.
 
+## Trigger Modes
+The PR Knowledge Agent now supports two ways to run:
+1. Automatic on pull requests (`pull_request` trigger)
+2. Manual from the Actions tab (`workflow_dispatch` trigger)
+
+When to use manual run:
+1. Re-run a branch without pushing a new commit
+2. Demo the flow in front of stakeholders
+3. Validate workflow behavior after infrastructure/config changes
+
 ## Visual Flow
 ```mermaid
 flowchart TD
@@ -46,6 +56,18 @@ Typical files touched by the agent:
 ## Step By Step (Human Readable)
 ### Step 1: Trigger
 The workflow runs when a PR is opened, updated, or reopened and matching paths are changed.
+
+It can also be started manually with Run workflow in GitHub Actions.
+
+### Step 1.5: Precheck and Skip Decision
+Before heavy processing starts, the workflow classifies the change scope and evaluates skip controls.
+
+Skip controls:
+1. PR label `skip-knowledge-agent`
+2. PR marker `[skip pkac-agent]` in title or body
+3. Docs-only change detection
+
+If skip applies, the workflow posts a clear skip summary and does not run knowledge/test update stages.
 
 ### Step 2: Diff Collection
 The agent compares base branch versus PR branch and extracts changed lines from source areas.
@@ -96,6 +118,7 @@ The agent posts or updates a PR comment describing:
 1. What was analyzed
 2. What changed
 3. Which steps passed or failed
+4. Whether the run was skipped and why
 
 ## What You Should Review In A PR
 When the bot updates a PR, review these first:
@@ -117,6 +140,15 @@ Knowledge and tests were already aligned with the PR changes, or impact was outs
 Meaning:
 Workflow approval or policy gate is pending. This is usually a process state, not a code crash.
 
+### Outcome D: Skipped By Policy
+Meaning:
+The workflow intentionally skipped heavy checks because a bypass control or docs-only scope was detected.
+
+Typical skip reasons:
+1. `skip-knowledge-agent` label present
+2. `[skip pkac-agent]` marker present
+3. docs-only change set
+
 ## Troubleshooting Quick Guide
 ### Problem: Workflow is green but updates look low quality
 Check:
@@ -135,6 +167,12 @@ Check:
 1. Repository workflow approval settings
 2. Whether the triggering actor needs maintainer approval
 
+### Problem: Run was skipped unexpectedly
+Check:
+1. PR labels for `skip-knowledge-agent`
+2. PR title/body for `[skip pkac-agent]`
+3. Whether all changed files are under `docs/` or `template-project/docs/`
+
 ## Glossary
 1. Knowledge triad: markdown, yaml, and gherkin files representing the same behavior.
 2. Impact artifact: machine-readable output describing affected features and proposed edits.
@@ -146,6 +184,18 @@ Check:
 3. Knowledge source folders: `template-project/knowledge/`
 4. Generated tests: `template-project/tests/`
 5. Hardening plan: `docs/pr-knowledge-agent-hardening-plan.md`
+
+## Demo Checklist For New Mechanisms
+1. Manual run test:
+2. Open Actions tab and run PR Knowledge Agent with Run workflow.
+3. Label skip test:
+4. Add label `skip-knowledge-agent` on a PR with code changes, then push a small update.
+5. Marker skip test:
+6. Remove label, add `[skip pkac-agent]` to PR title/body, then push a small update.
+7. Verify in PR comment:
+8. skip mode
+9. skip reason
+10. pipeline stage statuses
 
 ## Suggested Onboarding Exercise
 1. Create a tiny PR changing one validation rule in `template-project/src`.
