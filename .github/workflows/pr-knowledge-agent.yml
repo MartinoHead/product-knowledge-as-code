@@ -139,13 +139,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git commit -m "product-knowledge-as-code: AI agent — update knowledge and regenerate tests" -m "AI agent analyzed PR diff (${{ steps.diff.outputs.diff_lines }} lines) and updated:
-- Knowledge files (md/yaml/gherkin) for impacted features
-- Generated test scaffolds from updated knowledge
-
-Triggered by: ${{ github.event.pull_request.title }}
-PR: #${{ github.event.number }}
-Commit: ${{ github.sha }}"
+          git commit -m "product-knowledge-as-code: AI agent — update knowledge and regenerate tests" -m $'AI agent analyzed PR diff (${{ steps.diff.outputs.diff_lines }} lines) and updated:\n- Knowledge files (md/yaml/gherkin) for impacted features\n- Generated test scaffolds from updated knowledge\n\nTriggered by: ${{ github.event.pull_request.title }}\nPR: #${{ github.event.number }}\nCommit: ${{ github.sha }}'
 
           git push origin "${{ github.head_ref }}"
 
