@@ -21,11 +21,13 @@ export async function createManagedUser(input: {
   firstName?: unknown;
   lastName?: unknown;
   phone?: unknown;
+  role?: unknown;
 }): Promise<CreateManagedUserResult> {
   const email = normalizeEmail(input.email);
   const firstName = String(input.firstName || '').trim();
   const lastName = String(input.lastName || '').trim();
   const phone = String(input.phone || '').trim();
+  const role = String(input.role || 'user').trim().toLowerCase();
 
   if (!EMAIL_PATTERN.test(email) || !firstName || !lastName) {
     return {
@@ -33,6 +35,18 @@ export async function createManagedUser(input: {
       body: {
         error: 'invalid_request',
         message: 'Email, firstName, and lastName are required.',
+      },
+    };
+  }
+
+  // Validate role is one of allowed values
+  const allowedRoles = ['user', 'admin', 'moderator'];
+  if (!allowedRoles.includes(role)) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid_request',
+        message: `Role must be one of: ${allowedRoles.join(', ')}.`,
       },
     };
   }
