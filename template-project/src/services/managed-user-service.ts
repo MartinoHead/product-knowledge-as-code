@@ -22,12 +22,14 @@ export async function createManagedUser(input: {
   lastName?: unknown;
   phone?: unknown;
   role?: unknown;
+  status?: unknown;
 }): Promise<CreateManagedUserResult> {
   const email = normalizeEmail(input.email);
   const firstName = String(input.firstName || '').trim();
   const lastName = String(input.lastName || '').trim();
   const phone = String(input.phone || '').trim();
   const role = String(input.role || 'user').trim().toLowerCase();
+  const status = String(input.status || 'active').trim().toLowerCase();
 
   if (!EMAIL_PATTERN.test(email) || !firstName || !lastName) {
     return {
@@ -47,6 +49,18 @@ export async function createManagedUser(input: {
       body: {
         error: 'invalid_request',
         message: `Role must be one of: ${allowedRoles.join(', ')}.`,
+      },
+    };
+  }
+
+  // Validate status is one of allowed values
+  const allowedStatuses = ['active', 'inactive', 'suspended'];
+  if (!allowedStatuses.includes(status)) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid_request',
+        message: `Status must be one of: ${allowedStatuses.join(', ')}.`,
       },
     };
   }
