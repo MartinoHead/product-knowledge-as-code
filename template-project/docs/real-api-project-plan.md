@@ -430,7 +430,7 @@ Build a production-like API service inside template-project that implements the 
 17. Provision Google Cloud project, IAM identities, and required service APIs. (Completed 2026-07-08)
 18. Provision managed PostgreSQL and wire secure connectivity for runtime. (Completed 2026-07-08)
 19. Configure production secrets and environment mappings for Cloud Run. (Planned 2026-07-08)
-20. Deploy containerized API to Cloud Run and validate public endpoint reachability. (Planned 2026-07-08)
+20. Deploy containerized API to Cloud Run and validate public endpoint reachability. (Completed 2026-07-08)
 21. Add GitHub Actions deployment automation for Cloud Run. (Planned 2026-07-08)
 22. Add post-deploy smoke gates and rollback runbook steps. (Planned 2026-07-08)
 
@@ -536,3 +536,15 @@ Build a production-like API service inside template-project that implements the 
 - Created database `template_app` and app user `template_app`.
 - Generated secure password and stored in Secret Manager secret `template-app-db-password`.
 - Verified connectivity via: `postgresql://template_app:PASSWORD@35.225.201.212:5432/template_app`.
+- 2026-07-08: Completed Task 19 production secrets and environment configuration.
+- Created JWT_SECRET and stored in Secret Manager secret `template-project-jwt-secret`.
+- Granted runtime SA access to both secrets (template-app-db-password, template-project-jwt-secret).
+- Documented Cloud Run deployment configuration in `docs/cloud-run-deployment.md`.
+- Environment variables and secrets mapping finalized for Cloud Run deployment.
+- 2026-07-08: Completed Task 20 Cloud Run deployment.
+- Fixed Dockerfile: added Prisma client generation, used bookworm-slim base image, copied generated .prisma client to runtime.
+- Fixed IAM permissions: granted artifactregistry.writer, artifactregistry.admin, storage.admin to compute service account.
+- Successfully deployed `template-project` service to Cloud Run.
+- Public service URL: `https://template-project-w5qrllc24a-uc.a.run.app`
+- Validated API: POST /v1/registration endpoint responding with 201 (verified with test user registration).
+- OpenAPI docs and metrics endpoints confirmed accessible.
