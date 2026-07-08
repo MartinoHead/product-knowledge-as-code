@@ -19,6 +19,7 @@ on:
       - 'template-project/src/**'
       - 'template-project/prisma/**'
       - 'template-project/knowledge/**'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -38,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           # Checkout the PR head — full history so we can diff against base
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -49,7 +50,7 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
-          BASE="${{ github.base_ref }}"
+          BASE="${{ github.base_ref || github.event.repository.default_branch }}"
           git fetch origin "${BASE}"
 
           if git merge-base "origin/${BASE}" HEAD >/dev/null 2>&1; then
@@ -231,7 +232,7 @@ jobs:
 
       # ─── Step 10: Post PR comment ──────────────────────────────────────────
       - name: Post PR comment with agent summary
-        if: always()
+        if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
