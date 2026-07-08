@@ -111,6 +111,7 @@ jobs:
         id: apply-knowledge
         run: |
           APPLY_LLM_KNOWLEDGE_UPDATES=true npm run apply:knowledge:llm -- --apply
+          node scripts/sync-knowledge-triad.js
           
           # Capture which files changed
           CHANGED=$(git diff --name-only | grep '^knowledge/' || true)
