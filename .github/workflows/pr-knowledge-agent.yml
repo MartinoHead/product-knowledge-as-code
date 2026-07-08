@@ -57,10 +57,17 @@ jobs:
         id: diff
         run: |
           BASE="${{ github.base_ref }}"
-          git fetch origin "${BASE}" --depth=1
+          git fetch origin "${BASE}"
+
+          if git merge-base "origin/${BASE}" HEAD >/dev/null 2>&1; then
+            RANGE="origin/${BASE}...HEAD"
+          else
+            echo "No merge-base found; using two-dot diff fallback"
+            RANGE="origin/${BASE}..HEAD"
+          fi
 
           # Diff between PR head and base, limited to source files
-          git diff "origin/${BASE}...HEAD" \
+          git diff "${RANGE}" \
             -- 'src/**' 'prisma/**' \
             > /tmp/pr.diff || true
 
