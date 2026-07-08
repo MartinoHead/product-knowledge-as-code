@@ -433,6 +433,8 @@ Build a production-like API service inside template-project that implements the 
 20. Deploy containerized API to Cloud Run and validate public endpoint reachability. (Completed 2026-07-08)
 21. Add GitHub Actions deployment automation for Cloud Run. (Planned 2026-07-08)
 22. Add post-deploy smoke gates and rollback runbook steps. (Planned 2026-07-08)
+23. Wire feedback loop: on test failure / production incident, AI agent updates knowledge files, adds regression rules, regenerates tests, and commits back. (Pending)
+23. Wire feedback loop: on test failure / production incident, AI agent updates knowledge files, adds regression rules, regenerates tests, and commits back. (Pending)
 
 ## Progress Log
 - 2026-06-12: Task 1 completed.
@@ -745,3 +747,43 @@ Each run writes a formatted Markdown summary table to GitHub's Job Summary panel
 - ✅ All 10 gates with configurable thresholds
 - ✅ Automatic rollback on any gate failure
 - ✅ Manual trigger (workflow_dispatch) for on-demand validation
+
+### Task 23: Feedback Loop — Test Failure / Incident → Knowledge Evolution (Pending)
+
+**Objective:** Complete the PKAC closed loop. When tests fail in CI or a production incident is reported, an AI agent automatically:
+1. Analyses the failure details (test output, error message, stack trace)
+2. Identifies which knowledge rule was violated or is missing
+3. Adds a new rule or edge case to the affected knowledge file (md/yaml/gherkin)
+4. Regenerates test scaffolds from the updated knowledge
+5. Commits the regression rule and new test back to the branch
+6. Posts a PR/issue comment explaining the knowledge update
+
+**Why this matters:**
+This is the step that makes PKAC self-improving. Without it, knowledge only evolves when a developer remembers to update it. With it, every production incident or CI failure automatically hardens the knowledge base and prevents recurrence.
+
+**README alignment:**
+Directly implements the feedback loop described in the README:
+```
+Production Incident -> AI Root Cause Analysis -> Knowledge Update -> New Test Generation -> Regression Protection
+```
+And conference guide step 7: "Feedback updates knowledge again."
+
+**What already exists (no build needed for these):**
+- `scripts/closed-loop-simulator.js` — simulation script demonstrating the concept locally
+- `scripts/closed-loop-input.json` — example input format for failure details
+- `npm run simulate:closed-loop` — runs the simulation end-to-end
+- `npm run analyze:pr-impact:staged` — LLM analysis pipeline (reusable for failure input)
+- `npm run apply:knowledge:llm` — knowledge update application (reusable)
+
+**What needs to be built:**
+- `.github/workflows/feedback-loop.yml` — triggered via `workflow_run` on test failure; captures test output, calls LLM to identify missing/violated rules, applies knowledge update, commits regression rule + regenerated tests, posts PR comment
+- `scripts/analyze-test-failure-llm.js` (or extend `analyze-pr-impact-llm.js`) — accepts test failure output as input context instead of a git diff
+- Wire `closed-loop-simulator.js` as the deterministic fallback path in the workflow
+
+**Acceptance criteria:**
+- When `quality.yml` test job fails, the feedback loop triggers automatically
+- Affected knowledge file gains a new edge case rule (present in md, yaml, and gherkin)
+- `verify:sync` passes after the update
+- New test scaffold is generated from the new rule
+- PR comment documents what rule was added and why
+- The generated test covers the exact failure scenario

@@ -1,0 +1,228 @@
+name: PR Knowledge Agent
+
+# Triggered when a PR changes source code.
+# The agent:
+#   1. Reads the real git diff of changed source files
+#   2. Calls an LLM to identify impacted knowledge features and propose edits
+#   3. Applies knowledge file updates (md/yaml/gherkin)
+#   4. Regenerates test scaffolds from updated knowledge
+#   5. Commits the changes back to the PR branch
+#   6. Posts a PR comment summarising what was updated
+#
+# The existing quality.yml then enforces the "no drift" gate on the next push,
+# so the developer always sees a clean PR before merge.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'template-project/src/**'
+      - 'template-project/prisma/**'
+      - 'template-project/knowledge/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  models: read  # Required for GitHub Models API (GitHub Copilot paid account)
+
+jobs:
+  agent:
+    name: AI Knowledge Agent
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template-project
+
+    steps:
+      - name: Checkout PR branch (full history for diff)
+        uses: actions/checkout@v4
+        with:
+          # Checkout the PR head — full history so we can diff against base
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: template-project/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── Step 1: Compute the real git diff ─────────────────────────────────
+      - name: Compute PR diff (src + prisma only)
+        id: diff
+        run: |
+          BASE="${{ github.base_ref }}"
+          git fetch origin "${BASE}" --depth=1
+
+          # Diff between PR head and base, limited to source files
+          git diff "origin/${BASE}...HEAD" \
+            -- 'src/**' 'prisma/**' \
+            > /tmp/pr.diff || true
+
+          LINES=$(wc -l < /tmp/pr.diff | tr -d ' ')
+          echo "diff_lines=${LINES}" >> $GITHUB_OUTPUT
+          echo "has_diff=$( [ ${LINES} -gt 0 ] && echo true || echo false )" >> $GITHUB_OUTPUT
+          echo "Diff size: ${LINES} lines"
+
+      # ─── Step 2: Prepare enriched impact input ─────────────────────────────
+      - name: Prepare PR impact input (with diff)
+        run: |
+          node scripts/prepare-pr-impact-input.js \
+            --diff /tmp/pr.diff \
+            --output scripts/pr-impact-input.json
+
+      # ─── Step 3: LLM analysis ──────────────────────────────────────────────
+      - name: Analyze PR impact via LLM
+        id: llm-analysis
+        env:
+          # GitHub Models (free, uses built-in GITHUB_TOKEN — no extra secret needed).
+          # Override by setting OPENAI_API_KEY secret + OPENAI_BASE_URL/OPENAI_MODEL vars
+          # to use a different provider (OpenAI, Azure OpenAI, etc.).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.GITHUB_TOKEN }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o' }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://models.inference.ai.azure.com' }}
+        run: npm run analyze:pr-impact:staged
+
+      # ─── Step 4: Validate LLM output ──────────────────────────────────────
+      - name: Validate LLM impact artifact
+        run: npm run validate:llm-impact
+
+      # ─── Step 5: Apply knowledge updates ──────────────────────────────────
+      - name: Apply knowledge updates (apply mode)
+        id: apply-knowledge
+        run: |
+          APPLY_LLM_KNOWLEDGE_UPDATES=true npm run apply:knowledge:llm -- --apply
+          
+          # Capture which files changed
+          CHANGED=$(git diff --name-only | grep '^knowledge/' || true)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "${CHANGED}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # ─── Step 6: Verify sync after updates ────────────────────────────────
+      - name: Verify knowledge sync
+        run: npm run verify:sync
+
+      # ─── Step 7: Regenerate tests from updated knowledge ──────────────────
+      - name: Generate tests from knowledge
+        run: npm run generate:tests
+
+      # ─── Step 8: Check if anything actually changed ────────────────────────
+      - name: Detect changes to commit
+        id: changes
+        run: |
+          git add knowledge/ tests/
+
+          # Check for staged changes
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No knowledge or test changes to commit"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            SUMMARY=$(git diff --cached --stat)
+            echo "summary<<EOF" >> $GITHUB_OUTPUT
+            echo "${SUMMARY}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            echo "${SUMMARY}"
+          fi
+
+      # ─── Step 9: Commit changes back to PR branch ─────────────────────────
+      - name: Commit knowledge + test updates to PR branch
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "product-knowledge-as-code: AI agent — update knowledge and regenerate tests
+
+AI agent analyzed PR diff (${{ steps.diff.outputs.diff_lines }} lines) and updated:
+- Knowledge files (md/yaml/gherkin) for impacted features
+- Generated test scaffolds from updated knowledge
+
+Triggered by: ${{ github.event.pull_request.title }}
+PR: #${{ github.event.number }}
+Commit: ${{ github.sha }}"
+
+          git push origin "${{ github.head_ref }}"
+
+      # ─── Step 10: Post PR comment ──────────────────────────────────────────
+      - name: Post PR comment with agent summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasChanges = '${{ steps.changes.outputs.has_changes }}' === 'true';
+            const diffLines = '${{ steps.diff.outputs.diff_lines }}';
+            const changedFiles = `${{ steps.apply-knowledge.outputs.changed_files }}`.trim();
+            const changeSummary = `${{ steps.changes.outputs.summary }}`.trim();
+            const llmResult = '${{ steps.llm-analysis.outcome }}';
+            const applyResult = '${{ steps.apply-knowledge.outcome }}';
+
+            const statusIcon = hasChanges ? '🤖' : '✅';
+            const statusTitle = hasChanges
+              ? 'AI Knowledge Agent — Knowledge Updated'
+              : 'AI Knowledge Agent — No Updates Needed';
+
+            let body = `## ${statusIcon} ${statusTitle}\n\n`;
+            body += `**PR diff analysed:** ${diffLines} lines\n\n`;
+
+            if (hasChanges) {
+              body += `### Changes Committed\n\n`;
+              body += `The agent updated the following knowledge files and regenerated tests:\n\n`;
+              if (changedFiles) {
+                const files = changedFiles.split('\n').filter(Boolean);
+                body += files.map(f => `- \`${f}\``).join('\n') + '\n\n';
+              }
+              if (changeSummary) {
+                body += `\`\`\`\n${changeSummary}\n\`\`\`\n\n`;
+              }
+              body += `> **Review these changes** before approving the PR. `;
+              body += `The knowledge files reflect the AI's interpretation of the code changes.\n\n`;
+            } else {
+              body += `Knowledge files and tests are already aligned with the code changes. No updates were needed.\n\n`;
+            }
+
+            body += `### Pipeline\n\n`;
+            body += `| Step | Status |\n|------|--------|\n`;
+            body += `| Diff computed | ✅ |\n`;
+            body += `| LLM analysis | ${llmResult === 'success' ? '✅' : '⚠️ fallback used'} |\n`;
+            body += `| Knowledge validated | ✅ |\n`;
+            body += `| Updates applied | ${applyResult === 'success' ? '✅' : '❌'} |\n`;
+            body += `| Tests regenerated | ✅ |\n`;
+            body += `| Changes committed | ${hasChanges ? '✅' : '— (nothing to commit)'} |\n`;
+
+            body += `\n---\n_This comment is generated automatically by the [PR Knowledge Agent](.github/workflows/pr-knowledge-agent.yml)._`;
+
+            // Find and update an existing agent comment, or create a new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('AI Knowledge Agent')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      models: read  # Required for GitHub Models API (GitHub Copilot paid account)
     env:
       FLOW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.flow_mode || 'both' }}
       APPLY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_mode || 'dry-run' }}
@@ -59,15 +60,28 @@ jobs:
       - name: Prepare PR impact input
         if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
         working-directory: template-project
-        run: npm run prepare:pr-input
+        run: |
+          # Compute git diff to enrich the LLM with real changed code context
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.base_ref }}"
+            git fetch origin "${BASE}" --depth=1 2>/dev/null || true
+            git diff "origin/${BASE}...HEAD" -- 'src/**' 'prisma/**' > /tmp/pr.diff 2>/dev/null || true
+            DIFF_ARG="--diff /tmp/pr.diff"
+          else
+            DIFF_ARG=""
+          fi
+          node scripts/prepare-pr-impact-input.js ${DIFF_ARG} --output scripts/pr-impact-input.json
 
       - name: Analyze PR impact (LLM staged with deterministic fallback)
         if: ${{ env.FLOW_MODE == 'real' || env.FLOW_MODE == 'both' }}
         working-directory: template-project
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
-          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          # GitHub Models (free, uses built-in GITHUB_TOKEN — no extra secret needed).
+          # Override by setting OPENAI_API_KEY secret + OPENAI_BASE_URL/OPENAI_MODEL vars
+          # to use a different provider (OpenAI, Azure OpenAI, etc.).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.GITHUB_TOKEN }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4o' }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || 'https://models.inference.ai.azure.com' }}
         run: npm run analyze:pr-impact:staged
 
       - name: Validate LLM impact artifact
