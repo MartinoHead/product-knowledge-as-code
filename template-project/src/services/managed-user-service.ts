@@ -20,10 +20,12 @@ export async function createManagedUser(input: {
   email?: unknown;
   firstName?: unknown;
   lastName?: unknown;
+  phone?: unknown;
 }): Promise<CreateManagedUserResult> {
   const email = normalizeEmail(input.email);
   const firstName = String(input.firstName || '').trim();
   const lastName = String(input.lastName || '').trim();
+  const phone = String(input.phone || '').trim();
 
   if (!EMAIL_PATTERN.test(email) || !firstName || !lastName) {
     return {
