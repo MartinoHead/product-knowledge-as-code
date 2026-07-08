@@ -30,3 +30,5 @@ Input: mock-pr-diff.txt
 4. Feed failures back into knowledge rules.
 
 <!-- skip-label-trigger 2026-07-09 00:29:13 -->
+
+<!-- skip-marker-trigger 2026-07-09 00:32:08 -->
