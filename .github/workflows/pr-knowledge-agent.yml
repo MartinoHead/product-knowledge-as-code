@@ -97,7 +97,14 @@ jobs:
 
       # ─── Step 4: Validate LLM output ──────────────────────────────────────
       - name: Validate LLM impact artifact
-        run: npm run validate:llm-impact
+        run: |
+          if npm run validate:llm-impact; then
+            echo "LLM impact artifact validation passed."
+          else
+            echo "LLM artifact validation failed; generating deterministic fallback artifact."
+            PR_IMPACT_FALLBACK_DIFF=/tmp/pr.diff OPENAI_API_KEY='' node scripts/run-pr-impact-analysis-staged.js
+            npm run validate:llm-impact
+          fi
 
       # ─── Step 5: Apply knowledge updates ──────────────────────────────────
       - name: Apply knowledge updates (apply mode)
