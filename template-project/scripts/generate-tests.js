@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const { getFeatureRules, verifyKnowledgeSync } = require('./knowledge-utils');
+const { verifyKnowledgeSync } = require('./knowledge-utils');
 
 const knowledgeDir = path.join(__dirname, '..', 'knowledge');
+const apiDir = path.join(__dirname, '..', 'tests', 'api');
 const testDir = path.join(__dirname, '..', 'tests', 'playwright');
 
 if (!fs.existsSync(testDir)) {
@@ -17,25 +18,20 @@ if (issues.length) {
 }
 
 for (const feature of bundle) {
-  const ruleEntries = getFeatureRules(feature);
   const specBaseName = feature.featureName.replace(/[\\/]/g, '-');
+  const apiFile = path.join(apiDir, `${specBaseName}.api.spec.ts`);
   const outFile = path.join(testDir, `${specBaseName}.spec.ts`);
 
-  const tests = ruleEntries
-    .map(
-      ([id, text]) =>
-        `test('[${id}] ${text}', async ({ page }) => {\n` +
-        `  // TODO: implement scenario for ${id}.\n` +
-        `  // Use resilient locators and deterministic assertions.\n` +
-        `});\n`
-    )
-    .join('\n');
+  if (!fs.existsSync(apiFile)) {
+    throw new Error(`API spec not found for feature '${specBaseName}': ${apiFile}`);
+  }
 
-  const content =
-    `import { test } from '@playwright/test';\n\n` +
-    `// Auto-generated scaffold from synchronized knowledge (md/yaml/gherkin).\n` +
-    `// Fill each TODO with executable assertions.\n\n` +
-    tests;
+  const apiContent = fs.readFileSync(apiFile, 'utf8');
+
+  const content = apiContent
+    .replace('Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).', 'Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).')
+    .replace('Generator emits executable deterministic baseline scenarios.', 'Derived from API executable scenarios to keep behavior traceability aligned.')
+    .replace(/\[([A-Z]+-\d+)\] API /g, '[$1] ');
 
   fs.writeFileSync(outFile, content, 'utf8');
   console.log(`Generated ${path.relative(process.cwd(), outFile)}`);
