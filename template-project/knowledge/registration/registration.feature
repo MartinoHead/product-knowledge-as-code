@@ -24,3 +24,15 @@ Feature: Registration
     Given rule REG-004 preconditions are satisfied
     When the actor executes registration
     Then system behavior matches the rule statement
+
+  @REG-005
+  Scenario: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.
+    Given rule REG-005 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement
+
+  @REG-006
+  Scenario: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.
+    Given rule REG-006 preconditions are satisfied
+    When the actor executes registration
+    Then system behavior matches the rule statement

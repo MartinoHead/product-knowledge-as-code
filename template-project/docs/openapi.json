@@ -224,6 +224,21 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Persistent identity storage is unavailable.",
+            "headers": {
+              "x-api-prefix": {
+                "$ref": "#/components/headers/ApiPrefixHeader"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -339,6 +354,21 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistent identity storage is unavailable.",
+            "headers": {
+              "x-api-prefix": {
+                "$ref": "#/components/headers/ApiPrefixHeader"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableResponse"
                 }
               }
             }
@@ -460,6 +490,21 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Persistent identity storage is unavailable.",
+            "headers": {
+              "x-api-prefix": {
+                "$ref": "#/components/headers/ApiPrefixHeader"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -554,6 +599,21 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistent identity storage is unavailable.",
+            "headers": {
+              "x-api-prefix": {
+                "$ref": "#/components/headers/ApiPrefixHeader"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableResponse"
                 }
               }
             }
@@ -1182,6 +1242,25 @@
           "message": {
             "type": "string",
             "example": "Too many requests. Try again later."
+          }
+        },
+        "required": [
+          "error",
+          "message"
+        ]
+      },
+      "ServiceUnavailableResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": [
+              "service_unavailable"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "example": "Persistent identity storage is unavailable. Try again later."
           }
         },
         "required": [

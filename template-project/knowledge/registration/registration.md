@@ -48,3 +48,5 @@ Allow a new user to create an account securely.
 - domain: registration
 - reason: Password policy changed to min 10 characters
 <!-- CLOSED-LOOP:END -->
+- REG-005: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.
+- REG-006: Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.
