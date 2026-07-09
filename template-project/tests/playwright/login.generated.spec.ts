@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
 
 // Demo-generated executable tests from Markdown knowledge source of truth.
 // This file is a derived artifact generated from synchronized knowledge and API test templates.
+// When a test fails, request/response trace is printed to stderr.
+
+attachRequestFailureLogger();
 
 test('[LGN-001] Login requires registered email.', async ({ request }) => {
-  const response = await request.post('/v1/login', {
+  const response = await apiPost(request, '/v1/login', {
     data: { email: uniqueEmail('login-missing-user'), password: 'valid-password-123' },
   });
   expect([401, 503]).toContain(response.status());
@@ -19,13 +22,13 @@ test('[LGN-001] Login requires registered email.', async ({ request }) => {
 test('[LGN-002] Login requires correct password for the registered email.', async ({ request }) => {
   const email = uniqueEmail('login-wrong-password');
   const password = 'valid-password-123';
-  const reg = await request.post('/v1/registration', { data: { email, password } });
+  const reg = await apiPost(request, '/v1/registration', { data: { email, password } });
   expect([201, 503]).toContain(reg.status());
   if (reg.status() === 503) {
     expect(await reg.json()).toEqual({ error: 'service_unavailable', message: 'Persistent identity storage is unavailable. Try again later.' });
     return;
   }
-  const response = await request.post('/v1/login', { data: { email, password: 'wrong-password-999' } });
+  const response = await apiPost(request, '/v1/login', { data: { email, password: 'wrong-password-999' } });
   expect(response.status()).toBe(401);
   expect(await response.json()).toEqual({ error: 'invalid_credentials', message: 'Invalid credentials.' });
 });
@@ -33,13 +36,13 @@ test('[LGN-002] Login requires correct password for the registered email.', asyn
 test('[LGN-003] Successful login returns an active session token.', async ({ request }) => {
   const email = uniqueEmail('login-success');
   const password = 'valid-password-123';
-  const reg = await request.post('/v1/registration', { data: { email, password } });
+  const reg = await apiPost(request, '/v1/registration', { data: { email, password } });
   expect([201, 503]).toContain(reg.status());
   if (reg.status() === 503) {
     expect(await reg.json()).toEqual({ error: 'service_unavailable', message: 'Persistent identity storage is unavailable. Try again later.' });
     return;
   }
-  const response = await request.post('/v1/login', { data: { email, password } });
+  const response = await apiPost(request, '/v1/login', { data: { email, password } });
   expect(response.status()).toBe(200);
   const body = await response.json();
   expect(body.tokenType).toBe('Bearer');
@@ -48,13 +51,13 @@ test('[LGN-003] Successful login returns an active session token.', async ({ req
 });
 
 test('[LOG-001] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
-  const response = await request.post('/v1/login', { data: ['not-an-object'] });
+  const response = await apiPost(request, '/v1/login', { data: ['not-an-object'] });
   expect(response.status()).toBe(400);
   expect(await response.json()).toEqual({ error: 'invalid_request', message: 'Request body must be a JSON object.' });
 });
 
 test('[LOG-002] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
-  const response = await request.post('/v1/login', { data: ['not-an-object'] });
+  const response = await apiPost(request, '/v1/login', { data: ['not-an-object'] });
   expect(response.status()).toBe(400);
   expect(await response.json()).toEqual({ error: 'invalid_request', message: 'Request body must be a JSON object.' });
 });

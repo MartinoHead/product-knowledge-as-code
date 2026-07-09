@@ -385,13 +385,19 @@ for (const feature of bundle) {
   const specBaseName = feature.featureName.replace(/[\\/]/g, '-');
   const outFile = path.join(testDir, `${specBaseName}.api.spec.ts`);
 
-  const tests = ruleEntries.map(([id, text]) => renderApiTest(specBaseName, id, text)).join('\n');
+  const tests = ruleEntries
+    .map(([id, text]) => renderApiTest(specBaseName, id, text))
+    .join('\n')
+    .replace(/request\.post\(/g, 'apiPost(request, ')
+    .replace(/request\.get\(/g, 'apiGet(request, ');
 
   const content =
     `import { expect, test } from '@playwright/test';\n` +
-    `import { authHeaders, uniqueEmail } from '../helpers/api-helpers.js';\n\n` +
+    `import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';\n\n` +
     `// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).\n` +
-    `// Generator emits executable deterministic baseline scenarios.\n\n` +
+    `// Generator emits executable deterministic baseline scenarios.\n` +
+    `// When a test fails, request/response trace is printed to stderr.\n\n` +
+    `attachRequestFailureLogger();\n\n` +
     tests;
 
   fs.writeFileSync(outFile, content, 'utf8');

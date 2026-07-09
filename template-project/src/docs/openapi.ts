@@ -87,11 +87,111 @@ export function createOpenApiDocument() {
                   schema: {
                     type: 'object',
                     properties: {
-                      status: { type: 'string', example: 'ok' },
+                      status: { type: 'string', example: 'ok', enum: ['ok', 'degraded'] },
                       service: { type: 'string', example: 'template-project-api' },
                       timestamp: { type: 'string', format: 'date-time' },
+                      database: {
+                        type: 'object',
+                        properties: {
+                          configured: { type: 'boolean', example: true },
+                          reachable: { type: 'boolean', example: true },
+                          status: {
+                            type: 'string',
+                            enum: ['up', 'down', 'not_configured'],
+                            example: 'up',
+                          },
+                          latencyMs: { type: 'number', nullable: true, example: 12 },
+                          error: { type: 'string', nullable: true, example: null },
+                        },
+                        required: ['configured', 'reachable', 'status', 'latencyMs', 'error'],
+                      },
                     },
-                    required: ['status', 'service', 'timestamp'],
+                    required: ['status', 'service', 'timestamp', 'database'],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      [`/${env.apiVersion}/ready`]: {
+        get: {
+          tags: ['System'],
+          summary: 'Get readiness status (database-aware)',
+          responses: {
+            '200': {
+              description: 'Service is ready to receive traffic.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', example: 'ready', enum: ['ready'] },
+                      service: { type: 'string', example: 'template-project-api' },
+                      timestamp: { type: 'string', format: 'date-time' },
+                      database: {
+                        type: 'object',
+                        properties: {
+                          configured: { type: 'boolean', example: true },
+                          reachable: { type: 'boolean', example: true },
+                          status: {
+                            type: 'string',
+                            enum: ['up', 'down', 'not_configured'],
+                            example: 'up',
+                          },
+                          latencyMs: { type: 'number', nullable: true, example: 12 },
+                          error: { type: 'string', nullable: true, example: null },
+                        },
+                        required: ['configured', 'reachable', 'status', 'latencyMs', 'error'],
+                      },
+                    },
+                    required: ['status', 'service', 'timestamp', 'database'],
+                  },
+                },
+              },
+            },
+            '503': {
+              description: 'Service is not ready. Database is unreachable or not configured.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', example: 'not_ready', enum: ['not_ready'] },
+                      service: { type: 'string', example: 'template-project-api' },
+                      timestamp: { type: 'string', format: 'date-time' },
+                      reason: {
+                        type: 'string',
+                        enum: ['database_unreachable', 'database_not_configured'],
+                        example: 'database_unreachable',
+                      },
+                      database: {
+                        type: 'object',
+                        properties: {
+                          configured: { type: 'boolean', example: true },
+                          reachable: { type: 'boolean', example: false },
+                          status: {
+                            type: 'string',
+                            enum: ['up', 'down', 'not_configured'],
+                            example: 'down',
+                          },
+                          latencyMs: { type: 'number', nullable: true, example: 121 },
+                          error: { type: 'string', nullable: true, example: 'connect ECONNREFUSED' },
+                        },
+                        required: ['configured', 'reachable', 'status', 'latencyMs', 'error'],
+                      },
+                    },
+                    required: ['status', 'service', 'timestamp', 'reason', 'database'],
                   },
                 },
               },
