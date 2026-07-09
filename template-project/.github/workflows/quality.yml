@@ -113,6 +113,15 @@ jobs:
         working-directory: template-project
         run: npm run generate:tests
 
+      - name: Enforce real tests (no template TODOs)
+        working-directory: template-project
+        run: |
+          # Fail quality if generated/manual specs still contain template placeholders.
+          if rg -n "TODO: implement|Fill each TODO" tests --glob "*.spec.ts"; then
+            echo "Template test placeholders detected. Replace TODOs with executable assertions."
+            exit 1
+          fi
+
       - name: Fail on generated test drift
         run: git diff --exit-code
 
