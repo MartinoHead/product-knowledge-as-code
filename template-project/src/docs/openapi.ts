@@ -179,6 +179,21 @@ export function createOpenApiDocument() {
                 },
               },
             },
+            '503': {
+              description: 'Persistent identity storage is unavailable.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ServiceUnavailableResponse',
+                  },
+                },
+              },
+            },
             '500': {
               description: 'Unexpected server error.',
               headers: {
@@ -287,6 +302,21 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '503': {
+              description: 'Persistent identity storage is unavailable.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ServiceUnavailableResponse',
                   },
                 },
               },
@@ -403,6 +433,21 @@ export function createOpenApiDocument() {
                 },
               },
             },
+            '503': {
+              description: 'Persistent identity storage is unavailable.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ServiceUnavailableResponse',
+                  },
+                },
+              },
+            },
             '500': {
               description: 'Unexpected server error.',
               headers: {
@@ -494,6 +539,21 @@ export function createOpenApiDocument() {
                 'application/json': {
                   schema: {
                     $ref: '#/components/schemas/RateLimitedResponse',
+                  },
+                },
+              },
+            },
+            '503': {
+              description: 'Persistent identity storage is unavailable.',
+              headers: {
+                [API_PREFIX_HEADER_NAME]: {
+                  $ref: '#/components/headers/ApiPrefixHeader',
+                },
+              },
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/ServiceUnavailableResponse',
                   },
                 },
               },
@@ -880,6 +940,14 @@ export function createOpenApiDocument() {
           properties: {
             error: { type: 'string', enum: ['rate_limited'] },
             message: { type: 'string', example: 'Too many requests. Try again later.' },
+          },
+          required: ['error', 'message'],
+        },
+        ServiceUnavailableResponse: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', enum: ['service_unavailable'] },
+            message: { type: 'string', example: 'Persistent identity storage is unavailable. Try again later.' },
           },
           required: ['error', 'message'],
         },

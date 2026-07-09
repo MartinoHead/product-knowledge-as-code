@@ -156,6 +156,28 @@ Deliverable:
 Deliverable:
 1. Deterministic skip policy and documented bypass controls with audit trail.
 
+### Phase H: Replace Template Tests with Real Executable Coverage
+1. Replace placeholder TODO tests in API and Playwright suites with executable assertions.
+2. Ensure each rule ID has at least one deterministic assertion path.
+3. Keep traceability between knowledge rule IDs and test titles.
+4. Decide generator contract explicitly:
+5. either generator outputs executable tests
+6. or generator outputs scaffold files that are excluded from quality gates.
+7. Keep failing fast in CI when template placeholders are present in enforced test suites.
+
+Deliverable:
+1. Executable API and UI tests for impacted features with no TODO placeholders in enforced suites.
+
+### Phase I: Enforce Persistent Data Behavior for Identity Flows
+1. Remove silent in-memory fallback for create/find identity paths where persistent uniqueness is required.
+2. Return explicit service-unavailable behavior when database connectivity is missing.
+3. Add startup/runtime mode visibility so operators can see persistence mode clearly.
+4. Add regression checks for duplicate-email behavior across process restarts.
+5. Keep fallback behavior only where explicitly documented and non-critical.
+
+Deliverable:
+1. Deterministic duplicate-email conflict behavior backed by persistent storage and explicit failure modes.
+
 ## 7. Recursive Improvement Loop
 This plan must be updated whenever a new issue is discovered.
 
@@ -180,6 +202,8 @@ Loop per run:
 8. Confirm bot updates one rolling comment instead of creating duplicates.
 9. Confirm docs-only PRs skip agent processing with an explicit skip reason.
 10. Confirm bypass label or marker behaves as documented and is logged.
+11. Confirm enforced test suites contain no template TODO placeholders.
+12. Confirm duplicate-email conflict remains stable after application restart.
 
 ### Quality Verification
 1. Inspect one representative feature each run:
@@ -188,6 +212,7 @@ Loop per run:
 4. checkout
 5. Confirm no placeholder overwrite for pre-existing scenarios.
 6. Confirm rule ID continuity across md, yaml, feature, tests.
+7. Confirm test assertions validate behavior outcomes, not only response shape.
 
 ### Regression Verification
 1. Re-run workflow on same PR with no new code changes.
@@ -204,6 +229,8 @@ Loop per run:
 6. PR comment includes stage-by-stage detail that is human readable and demo friendly.
 7. Workflow logs provide clear narrative and final recap without digging through raw output.
 8. Docs-only changes do not run full agent checks and clearly report why they were skipped.
+9. Enforced test suites are executable and free of template TODO placeholders.
+10. Identity duplicate checks are persistent and deterministic across restarts.
 
 ## 10. Open Issues Register
 ### Issue 001
@@ -233,6 +260,20 @@ Status: Implemented, monitoring
 Description: Agent checks should not run for docs-only changes and should support explicit bypass controls.
 Impact: Unnecessary workflow runs, slower PR feedback, and noisy checks.
 Planned fix: Implement Phase G selective triggering and auditable bypass mechanism.
+
+### Issue 005
+Type: Quality/Test Execution
+Status: Open
+Description: Multiple generated and maintained test files still contain template TODO placeholders.
+Impact: CI quality gates fail and behavior coverage remains incomplete.
+Planned fix: Implement Phase H and enforce executable test policy.
+
+### Issue 006
+Type: Reliability/Data Integrity
+Status: Open
+Description: Identity flows can silently fall back to in-memory storage when database is unavailable.
+Impact: Duplicate-email behavior is non-deterministic across restarts and does not reflect real persistence guarantees.
+Planned fix: Implement Phase I strict persistence behavior and explicit service-unavailable handling.
 
 ## 11. Rollback Strategy
 1. If sync behavior causes incorrect edits, revert sync script commit only.

@@ -4,17 +4,22 @@ import {
   findManagedUserById as findManagedUserRecordById,
   listManagedUsers as listManagedUsersRecord,
 } from '../repositories/identity-repository.js';
+import { DatabaseUnavailableError } from '../repositories/database-unavailable-error.js';
 
 type CreateManagedUserResult =
   | { status: 201; body: { userId: string } }
   | { status: 400; body: { error: 'invalid_request'; message: string } }
-  | { status: 409; body: { error: 'duplicate_email'; message: string } };
+  | { status: 409; body: { error: 'duplicate_email'; message: string } }
+  | { status: 503; body: { error: 'service_unavailable'; message: string } };
 
 type GetManagedUserResult =
   | { status: 200; body: ManagedUser }
-  | { status: 404; body: { error: 'not_found'; message: string } };
+  | { status: 404; body: { error: 'not_found'; message: string } }
+  | { status: 503; body: { error: 'service_unavailable'; message: string } };
 
-type ListManagedUsersResult = { status: 200; body: { users: ManagedUser[] } };
+type ListManagedUsersResult =
+  | { status: 200; body: { users: ManagedUser[] } }
+  | { status: 503; body: { error: 'service_unavailable'; message: string } };
 
 export async function createManagedUser(input: {
   email?: unknown;
@@ -89,11 +94,26 @@ export async function createManagedUser(input: {
     };
   }
 
-  const user = await createManagedUserRecord({
-    email,
-    firstName,
-    lastName,
-  });
+  let user;
+
+  try {
+    user = await createManagedUserRecord({
+      email,
+      firstName,
+      lastName,
+    });
+  } catch (error) {
+    if (error instanceof DatabaseUnavailableError) {
+      return {
+        status: 503,
+        body: {
+          error: 'service_unavailable',
+          message: 'Persistent identity storage is unavailable. Try again later.',
+        },
+      };
+    }
+    throw error;
+  }
 
   if (!user) {
     return {
@@ -114,7 +134,22 @@ export async function createManagedUser(input: {
 }
 
 export async function getManagedUserById(userId: string): Promise<GetManagedUserResult> {
-  const user = await findManagedUserRecordById(userId);
+  let user;
+
+  try {
+    user = await findManagedUserRecordById(userId);
+  } catch (error) {
+    if (error instanceof DatabaseUnavailableError) {
+      return {
+        status: 503,
+        body: {
+          error: 'service_unavailable',
+          message: 'Persistent identity storage is unavailable. Try again later.',
+        },
+      };
+    }
+    throw error;
+  }
 
   if (!user) {
     return {
@@ -133,7 +168,23 @@ export async function getManagedUserById(userId: string): Promise<GetManagedUser
 }
 
 export async function listManagedUsers(): Promise<ListManagedUsersResult> {
-  const users = await listManagedUsersRecord();
+  let users;
+
+  try {
+    users = await listManagedUsersRecord();
+  } catch (error) {
+    if (error instanceof DatabaseUnavailableError) {
+      return {
+        status: 503,
+        body: {
+          error: 'service_unavailable',
+          message: 'Persistent identity storage is unavailable. Try again later.',
+        },
+      };
+    }
+    throw error;
+  }
+
   return {
     status: 200,
     body: { users },

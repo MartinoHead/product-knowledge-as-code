@@ -1,15 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../auth/password.js';
 import {
-  createManagedUser as createManagedUserInMemory,
-  createUser as createUserInMemory,
-  findManagedUserById as findManagedUserByIdInMemory,
-  findUserByEmail as findUserByEmailInMemory,
-  listManagedUsers as listManagedUsersInMemory,
   type AuthUser,
   type ManagedUser,
 } from '../data/in-memory-auth-store.js';
 import { getPrismaClientIfConfigured } from '../data/prisma-client.js';
+import { DatabaseUnavailableError } from './database-unavailable-error.js';
 
 type AuthUserRow = {
   publicId: string;
@@ -48,7 +44,9 @@ async function nextPublicId(tableName: 'AuthUser' | 'ManagedUser', prefix: strin
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    throw new Error('Prisma client is not configured.');
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   const rows = await prisma.$queryRawUnsafe<Array<{ publicId: string }>>(
@@ -84,7 +82,9 @@ export async function createAuthUser(email: string, password: string): Promise<A
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    return createUserInMemory(email, password);
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   try {
@@ -121,7 +121,7 @@ export async function createAuthUser(email: string, password: string): Promise<A
     return createdUsers[0] ? mapAuthUser(createdUsers[0]) : null;
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      return createUserInMemory(email, password);
+      throw new DatabaseUnavailableError('Cannot reach persistent identity storage.');
     }
     throw error;
   }
@@ -131,7 +131,9 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUser | und
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    return findUserByEmailInMemory(email);
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   try {
@@ -143,7 +145,7 @@ export async function findAuthUserByEmail(email: string): Promise<AuthUser | und
     return rows[0] ? mapAuthUser(rows[0]) : undefined;
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      return findUserByEmailInMemory(email);
+      throw new DatabaseUnavailableError('Cannot reach persistent identity storage.');
     }
     throw error;
   }
@@ -157,7 +159,9 @@ export async function createManagedUser(input: {
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    return createManagedUserInMemory(input);
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   try {
@@ -194,7 +198,7 @@ export async function createManagedUser(input: {
     return createdUsers[0] ? mapManagedUser(createdUsers[0]) : null;
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      return createManagedUserInMemory(input);
+      throw new DatabaseUnavailableError('Cannot reach persistent identity storage.');
     }
     throw error;
   }
@@ -204,7 +208,9 @@ export async function findManagedUserById(userId: string): Promise<ManagedUser |
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    return findManagedUserByIdInMemory(userId);
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   try {
@@ -216,7 +222,7 @@ export async function findManagedUserById(userId: string): Promise<ManagedUser |
     return rows[0] ? mapManagedUser(rows[0]) : undefined;
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      return findManagedUserByIdInMemory(userId);
+      throw new DatabaseUnavailableError('Cannot reach persistent identity storage.');
     }
     throw error;
   }
@@ -226,7 +232,9 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
   const prisma = getPrismaClientIfConfigured();
 
   if (!prisma) {
-    return listManagedUsersInMemory();
+    throw new DatabaseUnavailableError(
+      'Persistent identity storage is not configured (missing DATABASE_URL).',
+    );
   }
 
   try {
@@ -237,7 +245,7 @@ export async function listManagedUsers(): Promise<ManagedUser[]> {
     return rows.map(mapManagedUser);
   } catch (error) {
     if (isPrismaConnectionError(error)) {
-      return listManagedUsersInMemory();
+      throw new DatabaseUnavailableError('Cannot reach persistent identity storage.');
     }
     throw error;
   }
