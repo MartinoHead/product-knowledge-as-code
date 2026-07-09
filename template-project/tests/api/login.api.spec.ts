@@ -22,3 +22,8 @@ test('[LOG-001] API Document behavior change inferred from PR impact for login. 
   // TODO: implement API scenario for LOG-001.
   // Example: await request.post('/v1/...', { data: {...} });
 });
+
+test('[LOG-002] API Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.', async ({ request }) => {
+  // TODO: implement API scenario for LOG-002.
+  // Example: await request.post('/v1/...', { data: {...} });
+});

@@ -22,3 +22,8 @@ test('[LOG-001] Document behavior change inferred from PR impact for login. Sour
   // TODO: implement scenario for LOG-001.
   // Use resilient locators and deterministic assertions.
 });
+
+test('[LOG-002] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.', async ({ page }) => {
+  // TODO: implement scenario for LOG-002.
+  // Use resilient locators and deterministic assertions.
+});

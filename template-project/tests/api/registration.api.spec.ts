@@ -27,3 +27,8 @@ test('[REG-005] API Document behavior change inferred from PR impact for registr
   // TODO: implement API scenario for REG-005.
   // Example: await request.post('/v1/...', { data: {...} });
 });
+
+test('[REG-006] API Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.', async ({ request }) => {
+  // TODO: implement API scenario for REG-006.
+  // Example: await request.post('/v1/...', { data: {...} });
+});

@@ -27,3 +27,8 @@ test('[REG-005] Document behavior change inferred from PR impact for registratio
   // TODO: implement scenario for REG-005.
   // Use resilient locators and deterministic assertions.
 });
+
+test('[REG-006] Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.', async ({ page }) => {
+  // TODO: implement scenario for REG-006.
+  // Use resilient locators and deterministic assertions.
+});

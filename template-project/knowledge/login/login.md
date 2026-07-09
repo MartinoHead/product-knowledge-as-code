@@ -35,3 +35,4 @@ Allow an existing user to authenticate securely and access the application.
 - keyword "login" matched: M src/auth/login-service.ts
 <!-- AGENT-LAST-UPDATE:END -->
 - LOG-001: Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.
+- LOG-002: Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.

@@ -9,3 +9,5 @@ rules:
     title: Successful login returns an active session token.
   - id: LOG-001
     title: Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.
+  - id: LOG-002
+    title: Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from '../auth/password.js';.
