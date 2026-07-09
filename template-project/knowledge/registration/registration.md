@@ -17,7 +17,7 @@ Allow a new user to create an account securely.
 - REG-001: Email must be valid format.
 - REG-002: Email must be unique.
 - REG-003: Password length must be at least 10 characters.
-- REG-004: Verification email is sent after successful registration.
+- REG-004: Verification email is sent to the user after successful registration.
 
 ## Edge Cases
 - Existing email: show user-friendly duplicate error.
