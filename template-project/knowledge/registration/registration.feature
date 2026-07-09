@@ -20,7 +20,7 @@ Feature: Registration
     Then system behavior matches the rule statement
 
   @REG-004
-  Scenario: Verification email is sent after successful registration.
+  Scenario: Verification email is sent to the user after successful registration.
     Given rule REG-004 preconditions are satisfied
     When the actor executes registration
     Then system behavior matches the rule statement

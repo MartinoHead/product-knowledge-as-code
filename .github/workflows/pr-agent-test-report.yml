@@ -19,6 +19,9 @@ jobs:
     name: Run tests and publish report
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' || github.actor == 'github-actions[bot]' }}
+    env:
+      BASE_API_URL: ${{ vars.REAL_API_BASE_URL }}
+      BASE_URL: ${{ vars.REAL_API_BASE_URL }}
 
     defaults:
       run:
@@ -56,10 +59,15 @@ jobs:
         run: |
           API_STATUS='${{ steps.api.outcome }}'
           UI_STATUS='${{ steps.ui.outcome }}'
+          TARGET='${BASE_API_URL}'
+          if [ -z "${TARGET}" ]; then
+            TARGET='local webServer (REAL_API_BASE_URL not set)'
+          fi
 
           {
             echo '## PR Agent Test Report'
             echo ''
+            echo "- Target base URL: ${TARGET}"
             echo "- API tests: ${API_STATUS}"
             echo "- UI tests: ${UI_STATUS}"
             echo ''
@@ -93,11 +101,13 @@ jobs:
           script: |
             const apiStatus = '${{ steps.api.outcome }}';
             const uiStatus = '${{ steps.ui.outcome }}';
+            const target = `${{ vars.REAL_API_BASE_URL }}`.trim() || 'local webServer (REAL_API_BASE_URL not set)';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const body = [
               '## PR Agent Test Report',
               '',
+              `- Target base URL: ${target}`,
               `- API tests: ${apiStatus}`,
               `- UI tests: ${uiStatus}`,
               '',
