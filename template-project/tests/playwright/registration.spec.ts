@@ -22,3 +22,8 @@ test('[REG-004] Verification email is sent after successful registration.', asyn
   // TODO: implement scenario for REG-004.
   // Use resilient locators and deterministic assertions.
 });
+
+test('[REG-005] Document behavior change inferred from PR impact for registration. Source signal: keyword "registration" matched: type RegistrationResult =.', async ({ page }) => {
+  // TODO: implement scenario for REG-005.
+  // Use resilient locators and deterministic assertions.
+});
