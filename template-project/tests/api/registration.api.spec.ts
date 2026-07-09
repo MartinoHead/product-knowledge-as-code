@@ -33,7 +33,7 @@ test('[REG-003] API Password length must be at least 10 characters.', async ({ r
   expect(await response.json()).toEqual({ error: 'invalid_password', message: 'Password length must be at least 10 characters.' });
 });
 
-test('[REG-004] API Verification email is sent after successful registration.', async ({ request }) => {
+test('[REG-004] API Verification email is sent to the user after successful registration.', async ({ request }) => {
   const response = await request.post('/v1/registration', {
     data: { email: uniqueEmail('reg-success'), password: 'valid-password-123' },
   });
