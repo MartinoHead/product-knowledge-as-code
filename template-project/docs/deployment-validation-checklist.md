@@ -2,6 +2,48 @@
 
 Use this checklist after opening a PR or merging to main, to verify the full deployment flow is healthy.
 
+## 5-minute quick check
+
+Use this when you need a fast confidence check before or right after merge.
+
+1. Open GitHub Actions and confirm latest runs are green:
+   - `PR Knowledge Agent` (for PR updates)
+   - `PR Agent Test Report` (after bot commit on PR)
+   - `Deploy to Cloud Run` (after merge to main or manual dispatch)
+2. Open the latest `Deploy to Cloud Run` run and check these jobs are all green:
+   - `Quality Gates & Tests`
+   - `Build & Push Container`
+   - `Deploy to Cloud Run`
+   - `Smoke Gates`
+3. Run endpoint checks:
+
+```bash
+curl -fsS https://template-project-w5qrllc24a-uc.a.run.app/health
+curl -fsS https://template-project-w5qrllc24a-uc.a.run.app/ready
+curl -fsS https://template-project-w5qrllc24a-uc.a.run.app/docs > /dev/null
+```
+
+4. Run real API smoke tests:
+
+```bash
+cd template-project
+BASE_API_URL="https://template-project-w5qrllc24a-uc.a.run.app" BASE_URL="https://template-project-w5qrllc24a-uc.a.run.app" npm run test:api
+```
+
+PowerShell variant:
+
+```powershell
+cd template-project
+$env:BASE_API_URL="https://template-project-w5qrllc24a-uc.a.run.app"
+$env:BASE_URL="https://template-project-w5qrllc24a-uc.a.run.app"
+npm run test:api
+```
+
+Quick pass criteria:
+- Latest deploy run is fully green.
+- `/health`, `/ready`, and `/docs` return success.
+- `npm run test:api` passes.
+
 ## Scope
 
 This checklist validates:

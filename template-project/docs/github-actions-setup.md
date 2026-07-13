@@ -141,6 +141,104 @@ gcloud auth application-default login
 
 This is useful if you later run scripts that talk to Google Cloud APIs directly from your machine.
 
+## gcloud command explainer (plain English)
+
+If the commands felt like a black box, use this section as a translation guide.
+
+### Mental model
+
+- `gcloud` is your remote control for your Google Cloud account.
+- `project` is the account-space where your resources live.
+- `service account` is a robot identity used by automation.
+- `workload identity` is a trust bridge: GitHub proves who it is, Google gives short-lived access.
+- `roles` are permission bundles (what actions are allowed).
+
+### What your key commands did
+
+1. Login and context
+
+```bash
+gcloud auth login
+gcloud config set project project-08401bb0-e467-491a-ac0
+gcloud config set run/region us-central1
+```
+
+- `auth login`: signed you in locally.
+- `config set project`: picked the default project for later commands.
+- `config set run/region`: picked the default Cloud Run region.
+
+2. Enable required APIs
+
+```bash
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com ...
+```
+
+- Turned on backend Google services needed for deploy, images, secrets, logs, and IAM.
+
+3. Create the Workload Identity pool and provider
+
+```bash
+gcloud iam workload-identity-pools create github-provider ...
+gcloud iam workload-identity-pools providers create-oidc github ...
+```
+
+- Created a trust container (`github-provider`).
+- Added an OIDC provider (`github`) that accepts GitHub Actions tokens.
+- Attribute mapping copied GitHub token fields into IAM attributes.
+- Attribute condition restricted who can authenticate (your GitHub owner).
+
+4. Create service account for GitHub Actions
+
+```bash
+gcloud iam service-accounts create github-actions ...
+```
+
+- Created the robot identity used by CI to deploy.
+
+5. Grant deployment permissions
+
+```bash
+gcloud projects add-iam-policy-binding ... --role=roles/run.admin
+gcloud projects add-iam-policy-binding ... --role=roles/artifactregistry.writer
+gcloud projects add-iam-policy-binding ... --role=roles/iam.serviceAccountUser
+```
+
+- `run.admin`: can create/update Cloud Run service.
+- `artifactregistry.writer`: can push Docker images.
+- `iam.serviceAccountUser`: can deploy using the runtime service account.
+
+6. Bind GitHub identity to the service account
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding ... --role=roles/iam.workloadIdentityUser --member="principalSet://.../attribute.repository_owner/MartinoHead"
+```
+
+- This is the critical trust link.
+- It says: identities matching this GitHub principalSet may impersonate this service account.
+
+7. Verify project number and policy
+
+```bash
+gcloud projects describe project-08401bb0-e467-491a-ac0 --format='value(projectNumber)'
+gcloud iam service-accounts get-iam-policy github-actions@project-08401bb0-e467-491a-ac0.iam.gserviceaccount.com --format="json(bindings)"
+```
+
+- First command confirms the numeric project number used in principalSet.
+- Second command confirms the expected IAM bindings are present.
+
+### Why this is safer than JSON keys
+
+- With Workload Identity Federation, GitHub gets short-lived credentials at runtime.
+- No long-lived private key is stored in GitHub secrets.
+- Your org policy currently blocks key creation, which aligns with this safer model.
+
+### How to think about failures quickly
+
+- `permission denied`: role missing on project or service account.
+- `unauthorized` at auth step: principalSet or attribute condition mismatch.
+- `not found`: wrong project, region, service name, or provider/pool name.
+- Shell parse errors around `==`: missing quotes around attribute condition.
+
 ### Step 1: Configure Workload Identity Federation (Recommended)
 
 Use this option if you want GitHub Actions to deploy without storing a long-lived JSON key.
@@ -179,8 +277,6 @@ attribute.environment=assertion.environment \
   --issuer-uri=https://token.actions.githubusercontent.com \
   --attribute-condition="assertion.repository_owner == 'MartinoHead'"
 ```
-
-Replace `YOUR_GITHUB_ORG` with your GitHub organization name.
 
 Important: keep the full `assertion.repository_owner == '...'` expression inside quotes, otherwise your shell splits `==` and the GitHub owner into separate arguments.
 
