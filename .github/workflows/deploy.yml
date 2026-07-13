@@ -7,6 +7,8 @@ on:
     paths:
       - 'template-project/**'
       - '.github/workflows/deploy.yml'
+      - '.github/workflows/smoke-gates.yml'
+      - 'template-project/docs/github-actions-setup.md'
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -21,6 +23,8 @@ permissions:
 
 env:
   GCP_PROJECT: project-08401bb0-e467-491a-ac0
+  WIF_PROVIDER: projects/785643093715/locations/global/workloadIdentityPools/github-provider/providers/github
+  WIF_SERVICE_ACCOUNT: github-actions@project-08401bb0-e467-491a-ac0.iam.gserviceaccount.com
   GCP_REGION: us-central1
   SERVICE_NAME: template-project
   ARTIFACT_REGISTRY: cloud-run-source-deploy
@@ -76,8 +80,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/${{ env.GCP_PROJECT }}/locations/global/workloadIdentityProviders/github-provider
-          service_account: github-actions@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_lifetime: 3600s
 
@@ -134,8 +138,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/${{ env.GCP_PROJECT }}/locations/global/workloadIdentityProviders/github-provider
-          service_account: github-actions@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_lifetime: 3600s
 
@@ -227,8 +231,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/${{ env.GCP_PROJECT }}/locations/global/workloadIdentityProviders/github-provider
-          service_account: github-actions@${{ env.GCP_PROJECT }}.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_lifetime: 3600s
 
