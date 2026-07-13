@@ -20,8 +20,13 @@ function main() {
 
   for (const feature of bundle) {
     const specBaseName = feature.featureName.replace(/[\\/]/g, '-');
-    const apiFile = path.join(apiDir, `${specBaseName}.api.spec.ts`);
-    const outFile = path.join(outDir, `${specBaseName}.generated.spec.ts`);
+    const featureDir = path.join(outDir, specBaseName);
+    const apiFile = path.join(apiDir, specBaseName, `${specBaseName}.api.spec.ts`);
+    const outFile = path.join(featureDir, `${specBaseName}.generated.spec.ts`);
+
+    if (!fs.existsSync(featureDir)) {
+      fs.mkdirSync(featureDir, { recursive: true });
+    }
 
     if (!fs.existsSync(apiFile)) {
       throw new Error(`API spec not found for feature '${specBaseName}': ${apiFile}`);

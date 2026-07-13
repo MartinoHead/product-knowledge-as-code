@@ -383,7 +383,12 @@ function renderApiTest(featureName, id, text) {
 for (const feature of bundle) {
   const ruleEntries = getFeatureRules(feature);
   const specBaseName = feature.featureName.replace(/[\\/]/g, '-');
-  const outFile = path.join(testDir, `${specBaseName}.api.spec.ts`);
+  const featureDir = path.join(testDir, specBaseName);
+  const outFile = path.join(featureDir, `${specBaseName}.api.spec.ts`);
+
+  if (!fs.existsSync(featureDir)) {
+    fs.mkdirSync(featureDir, { recursive: true });
+  }
 
   const tests = ruleEntries
     .map(([id, text]) => renderApiTest(specBaseName, id, text))
@@ -393,7 +398,7 @@ for (const feature of bundle) {
 
   const content =
     `import { expect, test } from '@playwright/test';\n` +
-    `import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';\n\n` +
+    `import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';\n\n` +
     `// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).\n` +
     `// Generator emits executable deterministic baseline scenarios.\n` +
     `// When a test fails, request/response trace is printed to stderr.\n\n` +

@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';
 
-// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).
-// Generator emits executable deterministic baseline scenarios.
+// Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).
+// Derived from API executable scenarios to keep behavior traceability aligned.
 // When a test fails, request/response trace is printed to stderr.
 
 attachRequestFailureLogger();
 
-test('[LGN-001] API Login requires registered email.', async ({ request }) => {
+test('[LGN-001] Login requires registered email.', async ({ request }) => {
   const response = await apiPost(request, '/v1/login', {
     data: { email: uniqueEmail('login-missing-user'), password: 'valid-password-123' },
   });
@@ -19,7 +19,7 @@ test('[LGN-001] API Login requires registered email.', async ({ request }) => {
   expect(await response.json()).toEqual({ error: 'invalid_credentials', message: 'Invalid credentials.' });
 });
 
-test('[LGN-002] API Login requires correct password for the registered email.', async ({ request }) => {
+test('[LGN-002] Login requires correct password for the registered email.', async ({ request }) => {
   const email = uniqueEmail('login-wrong-password');
   const password = 'valid-password-123';
   const reg = await apiPost(request, '/v1/registration', { data: { email, password } });
@@ -33,7 +33,7 @@ test('[LGN-002] API Login requires correct password for the registered email.', 
   expect(await response.json()).toEqual({ error: 'invalid_credentials', message: 'Invalid credentials.' });
 });
 
-test('[LGN-003] API Successful login returns an active session token.', async ({ request }) => {
+test('[LGN-003] Successful login returns an active session token.', async ({ request }) => {
   const email = uniqueEmail('login-success');
   const password = 'valid-password-123';
   const reg = await apiPost(request, '/v1/registration', { data: { email, password } });
@@ -50,13 +50,13 @@ test('[LGN-003] API Successful login returns an active session token.', async ({
   expect(body.sessionToken).toMatch(/^eyJ/);
 });
 
-test('[LOG-001] API Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
+test('[LOG-001] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
   const response = await apiPost(request, '/v1/login', { data: ['not-an-object'] });
   expect(response.status()).toBe(400);
   expect(await response.json()).toEqual({ error: 'invalid_request', message: 'Request body must be a JSON object.' });
 });
 
-test('[LOG-002] API Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
+test('[LOG-002] Document behavior change inferred from PR impact for login. Source signal: keyword "auth" matched: import { hashPassword } from \'../auth/password.js\';.', async ({ request }) => {
   const response = await apiPost(request, '/v1/login', { data: ['not-an-object'] });
   expect(response.status()).toBe(400);
   expect(await response.json()).toEqual({ error: 'invalid_request', message: 'Request body must be a JSON object.' });

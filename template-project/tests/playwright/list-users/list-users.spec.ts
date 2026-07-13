@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test';
-import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';
 
-// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).
-// Generator emits executable deterministic baseline scenarios.
+// Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).
+// Derived from API executable scenarios to keep behavior traceability aligned.
 // When a test fails, request/response trace is printed to stderr.
 
 attachRequestFailureLogger();
 
-test('[LISTUSR-001] API List users requires authorization.', async ({ request }) => {
+test('[LISTUSR-001] List users requires authorization.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users');
   expect(response.status()).toBe(401);
   expect(await response.json()).toEqual({ error: 'unauthorized', message: 'Authorization required.' });
 });
 
-test('[LISTUSR-002] API List users returns empty array when no users exist.', async ({ request }) => {
+test('[LISTUSR-002] List users returns empty array when no users exist.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users', { headers: authHeaders('usr_list_empty') });
   expect([200, 503]).toContain(response.status());
   if (response.status() === 503) {
@@ -24,7 +24,7 @@ test('[LISTUSR-002] API List users returns empty array when no users exist.', as
   expect(Array.isArray(body.users)).toBe(true);
 });
 
-test('[LISTUSR-003] API List users returns all created managed users.', async ({ request }) => {
+test('[LISTUSR-003] List users returns all created managed users.', async ({ request }) => {
   const a = uniqueEmail('list-a');
   const b = uniqueEmail('list-b');
   const first = await apiPost(request, '/v1/users', { headers: authHeaders(), data: { email: a, firstName: 'List', lastName: 'A' } });
@@ -41,7 +41,7 @@ test('[LISTUSR-003] API List users returns all created managed users.', async ({
   expect(emails).toContain(b);
 });
 
-test('[LISTUSR-004] API List users includes userId, email, firstName, and lastName fields.', async ({ request }) => {
+test('[LISTUSR-004] List users includes userId, email, firstName, and lastName fields.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users', { headers: authHeaders('usr_list_fields') });
   expect([200, 503]).toContain(response.status());
   if (response.status() === 503) return;
@@ -53,7 +53,7 @@ test('[LISTUSR-004] API List users includes userId, email, firstName, and lastNa
   }
 });
 
-test('[LISTUSR-005] API List users returns users in creation order.', async ({ request }) => {
+test('[LISTUSR-005] List users returns users in creation order.', async ({ request }) => {
   const firstEmail = uniqueEmail('order-first');
   const secondEmail = uniqueEmail('order-second');
   const first = await apiPost(request, '/v1/users', { headers: authHeaders(), data: { email: firstEmail, firstName: 'Order', lastName: 'First' } });
@@ -69,7 +69,7 @@ test('[LISTUSR-005] API List users returns users in creation order.', async ({ r
   expect(firstIndex).toBeLessThan(secondIndex);
 });
 
-test('[LISTUSR-006] API Invalid token returns unauthorized response.', async ({ request }) => {
+test('[LISTUSR-006] Invalid token returns unauthorized response.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users', { headers: { Authorization: 'Bearer invalid-token' } });
   expect(response.status()).toBe(401);
   expect(await response.json()).toEqual({ error: 'unauthorized', message: 'Authorization required.' });

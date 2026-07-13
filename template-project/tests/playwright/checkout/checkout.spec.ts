@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';
 
-// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).
-// Generator emits executable deterministic baseline scenarios.
+// Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).
+// Derived from API executable scenarios to keep behavior traceability aligned.
 // When a test fails, request/response trace is printed to stderr.
 
 attachRequestFailureLogger();
 
-test('[CHK-001] API Checkout requires at least one cart item.', async ({ request }) => {
+test('[CHK-001] Checkout requires at least one cart item.', async ({ request }) => {
   const response = await apiPost(request, '/v1/checkout', {
     data: { items: [], shippingAddress: { line1: 'Main', city: 'Sofia', postalCode: '1000', country: 'BG' }, paymentToken: 'pay_ok_1' },
   });
@@ -15,7 +15,7 @@ test('[CHK-001] API Checkout requires at least one cart item.', async ({ request
   expect(await response.json()).toEqual({ error: 'empty_cart', message: 'Checkout requires at least one cart item.' });
 });
 
-test('[CHK-002] API Shipping address fields are mandatory.', async ({ request }) => {
+test('[CHK-002] Shipping address fields are mandatory.', async ({ request }) => {
   const response = await apiPost(request, '/v1/checkout', {
     data: { items: [{ sku: 'SKU-1', quantity: 1 }], shippingAddress: { line1: '', city: 'Sofia', postalCode: '1000', country: 'BG' }, paymentToken: 'pay_ok_2' },
   });
@@ -23,7 +23,7 @@ test('[CHK-002] API Shipping address fields are mandatory.', async ({ request })
   expect(await response.json()).toEqual({ error: 'invalid_shipping_address', message: 'Shipping address fields are mandatory.' });
 });
 
-test('[CHK-003] API Payment authorization is required before order creation.', async ({ request }) => {
+test('[CHK-003] Payment authorization is required before order creation.', async ({ request }) => {
   const response = await apiPost(request, '/v1/checkout', {
     data: { items: [{ sku: 'SKU-1', quantity: 1 }], shippingAddress: { line1: 'Main', city: 'Sofia', postalCode: '1000', country: 'BG' }, paymentToken: 'declined_token' },
   });
@@ -31,7 +31,7 @@ test('[CHK-003] API Payment authorization is required before order creation.', a
   expect(await response.json()).toEqual({ error: 'payment_not_authorized', message: 'Payment authorization is required before order creation.' });
 });
 
-test('[CHK-004] API Confirmation page includes order reference.', async ({ request }) => {
+test('[CHK-004] Confirmation page includes order reference.', async ({ request }) => {
   const response = await apiPost(request, '/v1/checkout', {
     data: { items: [{ sku: 'SKU-1', quantity: 2 }], shippingAddress: { line1: 'Main', city: 'Sofia', postalCode: '1000', country: 'BG' }, paymentToken: 'pay_ok_' + Date.now() },
   });

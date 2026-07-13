@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';
 
-// Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).
-// Derived from API executable scenarios to keep behavior traceability aligned.
+// Demo-generated executable tests from Markdown knowledge source of truth.
+// This file is a derived artifact generated from synchronized knowledge and API test templates.
 // When a test fails, request/response trace is printed to stderr.
 
 attachRequestFailureLogger();

@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test';
-import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../helpers/api-helpers.js';
+import { apiGet, apiPost, attachRequestFailureLogger, authHeaders, uniqueEmail } from '../../helpers/api-helpers.js';
 
-// Auto-generated Playwright tests from synchronized knowledge (md/yaml/gherkin).
-// Derived from API executable scenarios to keep behavior traceability aligned.
+// Auto-generated API tests from synchronized knowledge (md/yaml/gherkin).
+// Generator emits executable deterministic baseline scenarios.
 // When a test fails, request/response trace is printed to stderr.
 
 attachRequestFailureLogger();
 
-test('[USG-001] Get user requires authorization.', async ({ request }) => {
+test('[USG-001] API Get user requires authorization.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users/usr_999');
   expect(response.status()).toBe(401);
   expect(await response.json()).toEqual({ error: 'unauthorized', message: 'Authorization required.' });
 });
 
-test('[USG-002] Get user requires existing user identifier.', async ({ request }) => {
+test('[USG-002] API Get user requires existing user identifier.', async ({ request }) => {
   const response = await apiGet(request, '/v1/users/usr_missing', { headers: authHeaders() });
   expect([404, 503]).toContain(response.status());
   if (response.status() === 503) {
@@ -23,7 +23,7 @@ test('[USG-002] Get user requires existing user identifier.', async ({ request }
   expect(await response.json()).toEqual({ error: 'not_found', message: 'User not found.' });
 });
 
-test('[USG-003] Successful get user returns user details payload.', async ({ request }) => {
+test('[USG-003] API Successful get user returns user details payload.', async ({ request }) => {
   const created = await apiPost(request, '/v1/users', {
     headers: authHeaders(),
     data: { email: uniqueEmail('get-user-success'), firstName: 'Get', lastName: 'User' },
