@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const RULE_ID_PATTERN = /[A-Z]{3}-\d{3}/;
+const RULE_ID_PATTERN = /[A-Z]{2,}-\d{3}/;
 
 function normalizeRuleText(text) {
   return text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -12,7 +12,7 @@ function parseMarkdownRules(content) {
   const lines = content.split(/\r?\n/);
 
   for (const line of lines) {
-    const match = line.match(/-\s*([A-Z]{3}-\d{3})\s*:\s*(.+)$/);
+    const match = line.match(/-\s*([A-Z]{2,}-\d{3})\s*:\s*(.+)$/);
     if (match) {
       rules.set(match[1], match[2].trim());
     }
@@ -27,7 +27,7 @@ function parseYamlRules(content) {
 
   let currentId = null;
   for (const line of lines) {
-    const idMatch = line.match(/^\s*-\s*id\s*:\s*([A-Z]{3}-\d{3})\s*$/);
+    const idMatch = line.match(/^\s*-\s*id\s*:\s*([A-Z]{2,}-\d{3})\s*$/);
     if (idMatch) {
       currentId = idMatch[1];
       continue;
@@ -49,7 +49,7 @@ function parseGherkinRules(content) {
 
   let pendingIds = [];
   for (const line of lines) {
-    const tagMatches = [...line.matchAll(/@([A-Z]{3}-\d{3})/g)].map((item) => item[1]);
+    const tagMatches = [...line.matchAll(/@([A-Z]{2,}-\d{3})/g)].map((item) => item[1]);
     if (tagMatches.length) {
       pendingIds = tagMatches;
       continue;

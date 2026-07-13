@@ -25,7 +25,7 @@ Feature: List Users
     And no managed users are hidden or filtered
 
   @LISTUSR-004
-  Scenario: List users includes required fields in response.
+  Scenario: List users includes userId, email, firstName, and lastName fields.
     Given an authenticated user
     And managed users exist in the system
     When list users is submitted
