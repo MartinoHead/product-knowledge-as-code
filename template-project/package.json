@@ -16,6 +16,7 @@
     "verify:openapi": "node scripts/verify-openapi.js",
     "verify:sync": "node scripts/verify-sync.js",
     "generate:tests": "npm run verify:sync && node scripts/generate-api-tests.js && node scripts/generate-tests.js && node scripts/generate-md-tests.js",
+    "generate:tests:llm": "node scripts/generate-api-tests-llm.js",
     "generate:md-tests": "npm run verify:sync && node scripts/generate-api-tests.js && node scripts/generate-md-tests.js",
     "prepare:pr-input": "node scripts/prepare-pr-impact-input.js",
     "analyze:pr-impact": "node scripts/pr-impact-analyzer.js --input scripts/pr-impact-input.json",
